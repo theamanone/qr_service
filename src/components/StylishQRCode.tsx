@@ -1,9 +1,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import QRCodeStyling, { DotType, CornerSquareType } from "qr-code-styling";
-import { motion } from "framer-motion";
 import { MdOutlineFileUpload } from "react-icons/md";
 import { FaDownload } from "react-icons/fa";
+import Image from "next/image";
 
 const qrCodeStyles = [
     { name: "Red Square", dotsOptions: { type: "square" as DotType }, cornersSquareOptions: { type: "square" as CornerSquareType }, backgrouondColor: "#ffffff", color: "#000000" },
@@ -284,9 +284,11 @@ export default function StylishQRCode() {
                         {/* Display Logo Preview */}
                         {selectedLogo ? (
                             <div className="relative">
-                                <img
+                                <Image
                                     src={selectedLogo}
                                     alt="Uploaded Logo"
+                                    width={64}
+                                    height={64}
                                     className="w-16 h-16 rounded-md object-cover border border-gray-300"
                                 />
                                 <button
