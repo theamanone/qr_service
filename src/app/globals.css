@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html{
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+}
 :root {
   --background: #ffffff;
   --foreground: #171717;

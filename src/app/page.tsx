@@ -1,11 +1,17 @@
 "use client";
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
+import Home from '@/components/Home';
 import StylishQRCode from '@/components/StylishQRCode'
+import { signOut, useSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react'
 
 export default function page() {
-  const [isDeveloper, setIsDeveloper] = useState(false);
+  const [isDeveloper, setIsDeveloper] = useState(true);
+
+
+
+
   useEffect(() => {
     if (!isDeveloper) {
       console.log(
@@ -42,7 +48,7 @@ export default function page() {
   return (
     <>
       <Header />
-      <StylishQRCode />
+      <Home />
       <Footer />
     </>
   )
