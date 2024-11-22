@@ -147,7 +147,7 @@ const Dashboard: React.FC = () => {
     if (loading) return <div>Loading...</div>;
 
     return (
-        <div className="min-h-screen relative bg-gray-100">
+        <div className="min-h-screen relative bg-gray-100 !max-w-full">
             <Header />
             <IoMdCreate
                 onClick={() => router.push("/new")}
@@ -169,11 +169,11 @@ const Dashboard: React.FC = () => {
                 </section>
 
                 {/* QR Codes Section */}
-                <section className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                <section className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 !max-w-[100vw]">
                     {dashboardData.qrCodes.map((qrCode: any, index: number) => (
                         <div
                             key={qrCode._id}
-                            className="bg-white shadow-md rounded-lg p-1 flex hover:shadow-lg transition-shadow duration-200 relative"
+                            className="bg-white !max-w-[90vw] overflow-hidden shadow-md rounded-lg p-1 flex hover:shadow-lg transition-shadow duration-200 relative"
                         >
                             {/* QR Code on the Left */}
                             <div
@@ -186,7 +186,7 @@ const Dashboard: React.FC = () => {
                             ></div>
 
                             {/* Details on the Right */}
-                            <section className="ml-4 flex flex-col justify-center w-full">
+                            <section className="ml-4 flex flex-col justify-center w-full max-w-full">
                                 {qrCode.showTitle && (
                                     <h3 className="text-sm font-medium text-gray-800 mb-1">
                                         title: {qrCode.title}
@@ -199,7 +199,7 @@ const Dashboard: React.FC = () => {
                                         href={qrCode?.targetUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-blue-500 underline"
+                                        className="text-blue-500 underline max-w-full overflow-hidden overflow-ellipsis"
                                     >
                                         {qrCode?.targetUrl || ""}
                                     </a>
