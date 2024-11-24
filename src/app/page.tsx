@@ -2,8 +2,6 @@
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import Home from '@/components/Home';
-import StylishQRCode from '@/components/StylishQRCode'
-import { signOut, useSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react'
 
 export default function page() {

@@ -101,7 +101,11 @@ const authOptions: AuthOptions = {
       return true;
     },
 
-    async jwt({ token, user }: any) {
+    async jwt({ token, user,session, trigger }: any) {
+
+      if(trigger === 'update' && session?.name){
+        token.name = session.name;
+      }
       if (user) {
         const dbUser = await User.findOne({ email: user.email });
         if (dbUser) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/dbConfig/dbConfig';
 import QRCode from '@/models/qrcode.model';
 import { getToken } from 'next-auth/jwt';
+import UserHistory from '@/models/userhistory.model';
 
 export async function DELETE(request: NextRequest) {
     try {
@@ -38,11 +39,26 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ message: "You are not authorized to delete this QR code" }, { status: 403 });
         }
 
+
+        const qrCodeDetails = {
+            title: qrCode?.title,
+            targetUrl: qrCode?.targetUrl,
+            createdAt: qrCode?.createdAt,
+        };
         // Proceed to delete the QR code if the user is the owner
         await QRCode.findByIdAndDelete(qrCodeId);
 
+        const historyRecord = await UserHistory.create({
+            user: token.sub,
+            actionType: "deleted",
+            targetModel: "QRCode",
+            targetId: qrCodeId,
+            description: `Deleted QR code: ${qrCodeDetails?.title}`,
+            changes: qrCodeDetails, // Optional: Add additional details about the deleted QR code
+        });
+
         // Return a success message
-        return NextResponse.json({ message: 'QR code deleted successfully', success: true }, { status: 200 });
+        return NextResponse.json({ message: 'QR code deleted successfully',   historyId: historyRecord._id , success: true }, { status: 200 });
 
     } catch (error) {
         console.error('Error:', error);

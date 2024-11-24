@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import QRCode from '@/models/qrcode.model'; // Import the QRCode model you provided earlier
 import { nanoid } from 'nanoid'; // Import nanoid for generating unique short IDs
 import dbConnect from "@/dbConfig/dbConfig";
+import UserHistory from "@/models/userhistory.model";
 
 export async function POST(request: NextRequest) {
   await dbConnect()
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
     
     console.log("title ", title , "showTitle ", showTitle , "textContent ", textContent , "showText ", showText , "targetUrl ", targetUrl)
-    console.log("qrOptions:", qrOptions);
+    // console.log("qrOptions:", qrOptions);
 
     // Generate a short unique ID for the QR code
     const shortId = nanoid(8); // Generates a unique 8-character ID
@@ -60,12 +61,28 @@ export async function POST(request: NextRequest) {
       scanCount: 0, // Initial scan count
     });
 
-    // Save the QRCode to the database
-   const res =  await newQRCode.save();
-   console.log("saved qr : ", res)
+    
+    const savedQRCode = await newQRCode.save();
+  //  console.log("saved qr : ", savedQRCode
+    
+  //  )
+
+  const historyRecord = await UserHistory.create({
+    user: userId,
+    actionType: "created",
+    targetModel: "QRCode",
+    targetId: savedQRCode._id,
+    description: `Created a new QR code: ${savedQRCode.title}`,
+    changes: {
+      title: savedQRCode.title,
+      targetUrl: savedQRCode.targetUrl,
+      createdAt: savedQRCode.createdAt,
+    },
+  });
+// console.log("history record : ", historyRecord)
 
     // Respond with the saved QRCode data
-    return NextResponse.json({ message: "QR Code created successfully", qrCode: newQRCode }, { status: 201 });
+    return NextResponse.json({ message: "QR Code created successfully", qrCode: newQRCode,  history: historyRecord }, { status: 201 });
 
   } catch (error) {
     console.error("Error:", error);

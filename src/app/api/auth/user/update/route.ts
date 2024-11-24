@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest) {
       // Update the user's name
       user.name = name.trim();
       await user.save();
-      return NextResponse.json({ message: "User details updated successfully", user: user }, { status: 200 });
+      return NextResponse.json({ message: "User details updated successfully", user: user, sucess: true }, { status: 200 });
     } else {
       return NextResponse.json({ message: "Name is required and must be a valid string" }, { status: 400 });
     }

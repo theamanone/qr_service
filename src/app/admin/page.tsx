@@ -14,8 +14,8 @@ export default function AdminPage() {
         <div className="flex items-center space-x-4">
           {session?.user?.image && (
             <Image
-              src={session.user.image}
-              alt={`${session.user.name}'s avatar`}
+              src={session?.user.image}
+              alt={`${session?.user.name}'s avatar`}
               width={40}
               height={40}
               className="w-10 h-10 rounded-full"
