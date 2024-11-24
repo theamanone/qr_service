@@ -245,7 +245,7 @@ const Profile: React.FC = () => {
           <div className='space-y-4'>
             {/* JSON Export */}
             <Link
-              href='/export?format=json'
+              href='/export'
               target='_blank'
               className='flex items-center text-blue-600 hover:underline'
             >
@@ -255,7 +255,7 @@ const Profile: React.FC = () => {
 
             {/* Excel Export */}
             <Link
-              href='/export?format=excel'
+              href='/export'
               target='_blank'
               className='flex items-center text-green-600 hover:underline'
             >
@@ -265,7 +265,7 @@ const Profile: React.FC = () => {
 
             {/* PDF Export */}
             <Link
-              href='/export?format=pdf'
+              href='/export'
               target='_blank'
               className='flex items-center text-red-600 hover:underline'
             >
