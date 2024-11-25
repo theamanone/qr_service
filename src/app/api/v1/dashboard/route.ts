@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const { id: userId } = token;
 
     await dbConnect();
-    // Fetch the user's information from the User model
+    // Fetcpih the user's information from the User model
     const user = await User.findById(userId).select('name email avatar isVerified createdAt');
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
