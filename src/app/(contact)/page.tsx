@@ -18,7 +18,7 @@ export default function Contact() {
           Get in <span className="text-blue-600">Touch</span>
         </h1>
         <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-          Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+          Have questions? We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
         </p>
       </div>
 
@@ -134,7 +134,7 @@ export default function Contact() {
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900">Frequently Asked Questions</h2>
           <p className="mt-4 text-gray-600">
-            Can't find the answer you're looking for? Reach out to our customer support team.
+            Can&apos;t find the answer you&apos;re looking for? Reach out to our customer support team.
           </p>
         </div>
         <div className="mt-12 grid gap-8 sm:grid-cols-2">

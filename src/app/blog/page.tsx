@@ -2,6 +2,7 @@
 
 import Footer from '@/components/Footer'
 import React from 'react'
+import Image from 'next/image'
 import { FiClock, FiTag, FiUser, FiCalendar } from 'react-icons/fi'
 
 const blogPosts = [
@@ -102,10 +103,12 @@ export default function Blog () {
           <div className='bg-white rounded-2xl shadow-xl overflow-hidden'>
             <div className='grid grid-cols-1 lg:grid-cols-2'>
               <div className='relative h-64 lg:h-auto'>
-                <img
+                <Image
                   src={blogPosts[0].image}
                   alt='Featured post'
-                  className='absolute inset-0 w-full h-full object-cover'
+                  width={400}
+                  height={300}
+                  className="w-full h-64 object-cover"
                 />
                 <div className='absolute inset-0 bg-gradient-to-t from-black/50 to-transparent lg:hidden'></div>
               </div>
@@ -149,10 +152,12 @@ export default function Blog () {
                 className='bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300'
               >
                 <div className='relative h-48'>
-                  <img
+                  <Image
                     src={post.image}
                     alt={post.title}
-                    className='absolute inset-0 w-full h-full object-cover'
+                    width={400}
+                    height={300}
+                    className="w-full h-48 object-cover"
                   />
                   <div className='absolute top-4 right-4'>
                     <span className='px-3 py-1 bg-white/90 rounded-full text-sm font-medium text-blue-600'>

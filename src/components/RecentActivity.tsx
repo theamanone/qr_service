@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import InfiniteScroll from 'react-infinite-scroll-component'
 import { motion } from 'framer-motion'
 import { deleteHistory, getUserHistory } from '@/utils/apiHandlers'
@@ -17,7 +17,7 @@ const RecentActivity = () => {
   const { demoHistory, setDemoHistory } = useAppContext()
 
   // Fetch user activity and set to context state
-  const fetchActivities = async () => {
+  const fetchActivities = useCallback(async () => {
     try {
       const data = await getUserHistory(page, 10)
 
@@ -38,7 +38,7 @@ const RecentActivity = () => {
     } catch (error) {
       console.error('Error fetching recent activities:', error)
     }
-  }
+  }, [page, demoHistory, setDemoHistory])
 
   useEffect(() => {
     if (didFetchRef.current) return
@@ -48,6 +48,10 @@ const RecentActivity = () => {
       fetchActivities() // Fetch data if demoHistory is empty
     }
   }, [demoHistory])
+
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities])
 
   // Handle deletion of an activity
   const handleDelete = async (id: string) => {

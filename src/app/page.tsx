@@ -4,7 +4,7 @@ import Header from '@/components/Header'
 import Home from '@/components/Home';
 import React, { useEffect, useState } from 'react'
 
-export default function page() {
+export default function Page() {
   const [isDeveloper, setIsDeveloper] = useState(true);
 
 
