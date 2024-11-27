@@ -47,43 +47,53 @@ const Confirm: React.FC<ConfirmProps> = ({
   return (
     <Dialog.Root open={isOpen} onOpenChange={onCancel}>
       <motion.div
-        className="fixed inset-0 flex justify-center items-center z-50"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.3 }}
+        className="fixed inset-0 flex justify-center items-center z-50 p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
       >
-        <Dialog.Content className="bg-white p-6 rounded-lg shadow-lg w-80">
-          <Dialog.Title className="sr-only">Confirmation Dialog</Dialog.Title>
-          <p className="text-gray-800 text-lg font-medium mb-4">{message}</p>
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+          className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md"
+        >
+          <Dialog.Title className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            Confirm Action
+          </Dialog.Title>
+          <p className="text-gray-600 dark:text-gray-300 text-base mb-6">{message}</p>
 
           {showInput && (
-            <div className="mb-4">
+            <div className="mb-6">
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 placeholder={inputPlaceholder}
+                autoFocus
               />
             </div>
           )}
 
-          <div className="flex justify-between">
+          <div className="flex gap-3 justify-end">
             <button
-              className="bg-gray-300 text-gray-800 rounded-lg px-4 py-2 w-24"
+              className="px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
               onClick={onCancel}
             >
               Cancel
             </button>
             <button
-              className="bg-red-500 text-white rounded-lg px-4 py-2 w-24"
+              className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm hover:shadow transition-all duration-200 font-medium"
               onClick={handleConfirm}
             >
               Confirm
             </button>
           </div>
-        </Dialog.Content>
+        </motion.div>
       </motion.div>
     </Dialog.Root>
   );

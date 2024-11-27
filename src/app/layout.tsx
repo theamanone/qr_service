@@ -8,11 +8,14 @@ const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
+  display: 'swap',
 });
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -27,8 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-       <head>
-        {/* Favicons */}
+      <head>
         <link
           rel="icon"
           type="image/png"
@@ -49,21 +51,14 @@ export default function RootLayout({
           sizes="180x180"
           href="/favicon/apple-touch-icon.png"
         />
-        <link
-          rel="manifest"
-          href="/favicon/site.webmanifest"
-        />
-        {/* Apple Metadata */}
-        <meta name="apple-mobile-web-app-title" content="QRStyle" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100`}
-      >
-        <AppProvider>
-          <SessionWrapper>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-gray-100 h-full flex flex-col`}>
+        <SessionWrapper>
+          <AppProvider>
             {children}
-          </SessionWrapper>
-        </AppProvider>
+          </AppProvider>
+        </SessionWrapper>
       </body>
     </html>
   );

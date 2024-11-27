@@ -44,10 +44,12 @@ export default function page() {
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <Home />
+      <main className="flex-grow">
+        <Home />
+      </main>
       <Footer />
-    </>
+    </div>
   )
 }

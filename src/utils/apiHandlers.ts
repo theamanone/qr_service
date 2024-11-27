@@ -1,8 +1,8 @@
 import axiosInstance from './axiosInstance'
 import { getRandomComplexSuffix } from './suffixapi'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-// const API_BASE_URL = '/api'
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE_URL = '/api'
 
 const handleApiError = (error: any) => {
   try {

@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    return NextResponse.json({ message: "User activity history fetched successfully", data: responseData }, { status: 200 });
+    return NextResponse.json({ message: "User activity history fetched successfully",success: true, data: responseData }, { status: 200 });
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json({ message: "Error processing request" }, { status: 500 });

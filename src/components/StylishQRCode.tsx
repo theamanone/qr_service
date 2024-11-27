@@ -7,8 +7,9 @@ import Image from 'next/image'
 import { createQr } from '@/utils/apiHandlers'
 import { useRouter } from 'next/navigation'
 import UrlInput from './common/Input'
+import html2canvas from 'html2canvas'
 
-
+// QR code styles
 const qrCodeStyles = [
   {
     name: 'Red Square',
@@ -188,8 +189,11 @@ export default function StylishQRCode () {
   const [qrCreated, setQrCreated] = useState(false)
   const [isClient, setIsClient] = useState(false)
   const [gradientColors, setGradientColors] = useState(['#ff0000', '#0000ff'])
-  const [cornerShape, setCornerShape] = useState('square')
-  const [padding, setPadding] = useState(20)
+  const [cornerType, setCornerType] = useState<CornerSquareType>('square')
+  const [dotType, setDotType] = useState<DotType>('square')
+  const [cornerDotType, setCornerDotType] = useState<DotType>('square')
+  const [margin, setMargin] = useState(20)
+  const [width, setWidth] = useState(300)
   const [visibleQrs, setVisibleQrs] = useState(4)
   const [loading, setLoading] = useState(false)
 
@@ -202,7 +206,8 @@ export default function StylishQRCode () {
   const [selectedLogo, setSelectedLogo] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const qrCodeRef = useRef<HTMLDivElement>(null)
+  const qrRef = useRef<HTMLDivElement>(null)
+  const desktopQrRef = useRef<HTMLDivElement>(null)
   const qrCodeInstance = useRef<QRCodeStyling | null>(null)
 
   const handleStyleSelection = (index: number) => {
@@ -214,54 +219,67 @@ export default function StylishQRCode () {
   useEffect(() => {
     if (selectedStyleIndex === null || selectedStyleIndex === undefined) return
 
-    // Calculate the background color based on whether gradient is enabled
     const defaultBgColor =
       bgColor || qrCodeStyles[selectedStyleIndex]?.backgrouondColor || '#ffffff'
-
-    // Set QR color from the selected style or default to black
     const defaultQrColor =
       qrColor || qrCodeStyles[selectedStyleIndex]?.color || '#000000'
 
-    // Set QR code options
-    const qrOptions = {
-      width: 300,
-      height: 300,
-      data: `${window.location.origin}/api/v1/qr?shortId=find&targetUrl=${url}`,
+    const qrOptions: any = {
+      width,
+      height: width,
+      data: url || 'https://example.com',
       dotsOptions: {
         color: defaultQrColor,
-        type: qrCodeStyles[selectedStyleIndex]?.dotsOptions?.type
+        type: dotType
       },
-      cornersSquareOptions:
-        qrCodeStyles[selectedStyleIndex]?.cornersSquareOptions,
+      cornersSquareOptions: {
+        type: cornerType,
+        color: defaultQrColor
+      },
+      cornersDotOptions: {
+        type: cornerDotType,
+        color: defaultQrColor
+      },
       backgroundOptions: {
-        color: isGradient
-          ? `linear-gradient(45deg, ${gradientColors.join(', ')})`
-          : defaultBgColor
+        color: defaultBgColor
       },
-      image: logo ? URL.createObjectURL(logo) : undefined,
       imageOptions: {
-        crossOrigin: 'anonymous',
-        margin: 10
+        hideBackgroundDots: true,
+        imageSize: 0.4,
+        margin: 0
       },
-      margin: 20
+      margin,
+      qrOptions: {
+        errorCorrectionLevel: 'H'
+      }
     }
-    console.log('qrOptions : ', qrOptions)
+
     setQrColor(defaultQrColor)
     setBgColor(defaultBgColor)
 
-    // Update QR code instance
-    if (qrCodeRef.current) {
-      qrCodeRef.current.innerHTML = '' // Clear existing QR code
+    // Create QR instance for mobile preview
+    if (qrRef.current) {
+      qrRef.current.innerHTML = ''
       qrCodeInstance.current = new QRCodeStyling(qrOptions)
-      qrCodeInstance.current.append(qrCodeRef.current) // Re-append updated QR code
+      qrCodeInstance.current.append(qrRef.current)
+    }
+
+    // Create QR instance for desktop preview
+    if (desktopQrRef.current) {
+      desktopQrRef.current.innerHTML = ''
+      const desktopQrInstance = new QRCodeStyling(qrOptions)
+      desktopQrInstance.append(desktopQrRef.current)
     }
   }, [
     url,
     selectedStyleIndex,
     qrColor,
     bgColor,
-    isGradient,
-    gradientColors,
+    width,
+    cornerType,
+    cornerDotType,
+    dotType,
+    margin,
     logo
   ])
 
@@ -287,347 +305,702 @@ export default function StylishQRCode () {
         qrCodeInstance.append(qrContainer)
       }
     })
-  }, [qrCodeStyles,  bgColor])
+  }, [qrCodeStyles, bgColor])
 
   const handleDownloadQRCode = async () => {
-    let retryCount = 0;
-    const maxRetries = 3; 
-    let savedQrCodeShortId:any= null; // Prevent duplicate saves to the backend
-  
-    const downloadQRCode = async () => {
-      try {
-        if (selectedStyleIndex === null || selectedStyleIndex === undefined) return;
-        setLoading(true);
-  
-        // If not already saved, save QR metadata to the backend
-        if (!savedQrCodeShortId) {
-          const qrOptions = {
-            width: 300,
-            height: 300,
-            data: `/api/v1/qr?shortId=find&targetUrl=${url}`,
-            dotsOptions: {
-              color: qrColor || qrCodeStyles[selectedStyleIndex]?.color || '#000000',
-              type: qrCodeStyles[selectedStyleIndex]?.dotsOptions?.type,
-            },
-            cornersSquareOptions: qrCodeStyles[selectedStyleIndex]?.cornersSquareOptions,
-            backgroundOptions: {
-              color: isGradient
-                ? `linear-gradient(45deg, ${gradientColors.join(', ')})`
-                : bgColor || '#ffffff',
-            },
-            image: logo ? URL.createObjectURL(logo) : undefined,
-            imageOptions: { crossOrigin: 'anonymous', margin: 10 },
-            margin: 20,
-          };
-  
-          const formData = new FormData();
-          formData.append('targetUrl', url);
-          formData.append('title', title);
-          formData.append('showTitle', showTitle.toString());
-          formData.append('qrOptions', JSON.stringify(qrOptions));
-  
-          const response = await createQr(formData);
-          // console.log("response ")
-          if (!response || !response.qrCode?.shortId) {
-            throw new Error('Failed to save QR metadata to backend');
-          }
-  
-          savedQrCodeShortId = response.qrCode.shortId; // Save shortId for retries
-        }
-  
-        // Generate QR code image URL
-        const qrCodeDataUrl = `${window.location.origin}/api/v1/qr?shortId=${savedQrCodeShortId}&targetUrl=${url}`;
-  
-        if (qrCodeRef.current) {
-          const canvas = qrCodeRef.current.querySelector('canvas');
-          if (canvas) {
-            const padding = 20;
-            const newCanvas = document.createElement('canvas');
-            const ctx = newCanvas.getContext('2d');
-  
-            if (ctx) {
-              // Adjust canvas size for padding
-              // newCanvas.width = canvas.width + padding * 2;
-              // newCanvas.height = canvas.height + padding * 2;
-  
-              ctx.fillStyle = bgColor || '#ffffff'; // Default to white background
-              ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
-  
-              // Draw the QR code on the new canvas with padding
-              ctx.drawImage(canvas, padding, padding);
-  
-              // Convert canvas to PNG and trigger download
-              const dataUrl = newCanvas.toDataURL('image/png');
-              const link = document.createElement('a');
-              link.href = dataUrl;
-              link.download = 'my-qr-code.png';
-              link.click();
-            }
-          } else {
-            console.warn('Canvas not found. Retrying...');
-            throw new Error('Canvas not found.');
-          }
-        }
-        router.push(`/dashboard`)
-      } catch (error) {
-        console.error('Error occurred: ', error);
-        if (retryCount < maxRetries) {
-          retryCount++;
-          console.warn(`Retrying download... Attempt ${retryCount}`);
-          await downloadQRCode(); // Retry download logic
-        } else {
-          console.error('Max retries reached. Failed to download QR code.');
-          alert('An error occurred while generating the QR code. Please try again.');
-          setQrCreated(false);
-        }
-      } finally {
-        setLoading(false); // Reset loading state
+    const activeQrRef = qrRef.current
+    if (
+      !activeQrRef ||
+      selectedStyleIndex === null ||
+      selectedStyleIndex === undefined
+    )
+      return
+
+    try {
+      setLoading(true)
+
+      // Save QR metadata to backend if not already saved
+      const qrOptions = {
+        width,
+        height: width,
+        data: url || 'https://example.com',
+        dotsOptions: {
+          color:
+            qrColor || qrCodeStyles[selectedStyleIndex]?.color || '#000000',
+          type: dotType
+        },
+        cornersSquareOptions: {
+          type: cornerType,
+          color: qrColor
+        },
+        cornersDotOptions: {
+          type: cornerDotType,
+          color: qrColor
+        },
+        backgroundOptions: {
+          color: bgColor || '#ffffff'
+        },
+        margin
       }
-    };
-  
-    await downloadQRCode();
-  };
-  
-  // const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //     const file = e.target.files?.[0];
-  //     if (file) {
-  //         const reader = new FileReader();
-  //         reader.onload = () => setSelectedLogo(reader.result as string);
-  //         reader.readAsDataURL(file);
-  //         setLogo(file)
-  //     }
-  // };
 
-  // const triggerFileUpload = () => {
-  //     fileInputRef.current?.click();
-  // };
+      const formData = new FormData()
+      formData.append('targetUrl', url)
+      formData.append('title', title)
+      formData.append('showTitle', showTitle.toString())
+      formData.append('qrOptions', JSON.stringify(qrOptions))
 
-  // const handleRemoveLogo = () => {
-  //     setSelectedLogo(null);
-  //     if (fileInputRef.current) {
-  //         fileInputRef.current.value = ''; // Clear the file input
-  //     }
-  // };
+      const response = await createQr(formData)
+      if (!response || !response.qrCode?.shortId) {
+        throw new Error('Failed to save QR metadata to backend')
+      }
+
+      // Get the canvas element directly from the QR code container
+      const canvas = activeQrRef.querySelector('canvas')
+      if (!canvas) {
+        throw new Error('QR code canvas not found')
+      }
+
+      // Create a new canvas with padding
+      const paddedCanvas = document.createElement('canvas')
+      const ctx = paddedCanvas.getContext('2d')
+      if (!ctx) {
+        throw new Error('Failed to get canvas context')
+      }
+
+      // Set dimensions with padding
+      const padding = 20
+      paddedCanvas.width = canvas.width + padding * 2
+      paddedCanvas.height = canvas.height + padding * 2
+
+      // Fill background
+      ctx.fillStyle = bgColor || '#ffffff'
+      ctx.fillRect(0, 0, paddedCanvas.width, paddedCanvas.height)
+
+      // Draw original QR code with padding
+      ctx.drawImage(canvas, padding, padding)
+
+      // Download the image
+      const link = document.createElement('a')
+      link.download = 'qr-code.png'
+      link.href = paddedCanvas.toDataURL('image/png')
+      link.click()
+
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Error occurred: ', error)
+      alert('An error occurred while generating the QR code. Please try again.')
+      setQrCreated(false)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className='min-h-screen h-screen flex flex-col lg:flex-row bg-gray-50 text-black'>
-      {/* Sidebar Controls */}
-      <div className='lg:w-1/3 w-full bg-white shadow p-6 space-y-6 overflow-y-auto h-full'>
-        <h1 className='text-2xl font-bold mb-4'>QR Code Generator</h1>
-
-        {/* URL Input */}
-        {showUrl && (
-          <div>
-            <label htmlFor='url' className='block text-sm font-medium mb-2'>
-              URL
-            </label>
-            {/* <input
-                        id="url"
-                        type="text"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        className="w-full border border-gray-300 rounded-md p-2"
-                        placeholder="Enter a URL"
-                    /> */}
-            <UrlInput
-              type='text'
-              id='url'
-              value={url}
-              onChange={e => setUrl(e.target.value)}
-              className='w-full border border-gray-300 rounded-md p-2'
-              placeholder='Enter a URL'
+    <div className='min-h-screen bg-gray-50 p-4'>
+      {/* Mobile Layout */}
+      <div className='relative pb-4 lg:hidden'>
+        {/* Fixed QR Preview at Top */}
+        <div className='fixed top-0 left-0 right-0 bg-white shadow-lg z-50 p-4'>
+          <div className='flex flex-col items-center'>
+            <div
+              ref={qrRef}
+              className='mb-4 flex items-center justify-center'
+              style={{
+                width: `${width}px`,
+                height: `${width}px`,
+                margin: '0 auto'
+              }}
             />
+            <button
+              onClick={handleDownloadQRCode}
+              disabled={loading}
+              className='w-full bg-blue-500 text-white rounded-lg py-3 px-4 font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2'
+            >
+              {loading ? (
+                <RiLoader4Fill className='animate-spin text-xl' />
+              ) : (
+                <>
+                  <FaDownload className='text-lg' />
+                  <span>Download QR Code</span>
+                </>
+              )}
+            </button>
           </div>
-        )}
-
-        {/* QR Code Title */}
-        <div>
-          <label className='block text-sm font-medium mb-2'>Title</label>
-          <input
-            type='text'
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            className='w-full border border-gray-300 rounded-md p-2'
-            placeholder='Enter title'
-          />
-          <label className='flex items-center mt-2'>
-            <input
-              type='checkbox'
-              checked={showTitle}
-              onChange={() => setShowTitle(!showTitle)}
-              className='mr-2'
-            />
-            Show Title
-          </label>
         </div>
 
-        {/* Corner Shape Selection */}
-        {/* <label className="flex justify-between ">
-    Corner Shape:
-    <select
-        value={cornerShape}
-        onChange={(e) => setCornerShape(e.target.value)}
-    >
-        <option value="square">Square</option>
-        <option value="circle">Circle</option>
-        <option value="rounded">Rounded</option>
-    </select>
-</label> */}
-
-        {/* QR Code Text */}
-        <div>
-          <label className='block text-sm font-medium mb-2'>Text</label>
-          <textarea
-            value={textContent}
-            onChange={e => setTextContent(e.target.value)}
-            className='w-full border border-gray-300 rounded-md p-2'
-            placeholder='Add additional text'
-          />
-          <label className='flex items-center mt-2'>
-            <input
-              type='checkbox'
-              checked={showText}
-              onChange={() => setShowText(!showText)}
-              className='mr-2'
-            />
-            Show Text
-          </label>
-        </div>
-
-        {/* Color Options */}
-        <section className='flex flex-wrap gap-4 p-4 bg-gray-100 rounded-xl shadow-md'>
-          <div className='flex flex-col items-center w-[48%]'>
-            <label className='block text-sm font-medium mb-2 text-gray-600'>
-              Background Color
-            </label>
-            <div className='w-full h-14 rounded-lg overflow-hidden shadow-md bg-white flex justify-center items-center relative'>
-              <input
-                type='color'
-                value={bgColor}
-                onChange={e => setBgColor(e.target.value)}
-                className='w-full h-full cursor-pointer border-none appearance-none'
-                title='Select Background Color'
+        {/* Scrollable Controls with top margin for fixed preview */}
+        <div className='mt-[400px] space-y-4'>
+          {/* URL Input */}
+          {showUrl && (
+            <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Target URL
+              </label>
+              <UrlInput
+                type='text'
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                placeholder='Enter your destination URL'
               />
-              <span className='absolute bottom-1 right-2 text-xs text-gray-500'>
-                {bgColor.toUpperCase()}
-              </span>
             </div>
-          </div>
+          )}
 
-          <div className='flex flex-col items-center w-[48%]'>
-            <label className='block text-sm font-medium mb-2 text-gray-600'>
-              QR Code Color
-            </label>
-            <div className='w-full h-14 rounded-lg overflow-hidden shadow-md bg-white flex justify-center items-center relative'>
-              <input
-                type='color'
-                value={qrColor}
-                onChange={e => setQrColor(e.target.value)}
-                className='w-full h-full cursor-pointer border-none appearance-none'
-                title='Select QR Code Color'
-              />
-              <span className='absolute bottom-1 right-2 text-xs text-gray-500'>
-                {qrColor.toUpperCase()}
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* Logo Upload */}
-        {/* <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Upload Logo</label>
-                    <div className="flex items-center gap-4">
-               
-                        {selectedLogo ? (
-                            <div className="relative">
-                                <Image
-                                    src={selectedLogo}
-                                    alt="Uploaded Logo"
-                                    width={64}
-                                    height={64}
-                                    className="w-16 h-16 rounded-md object-cover border border-gray-300"
-                                />
-                                <button
-                                    onClick={handleRemoveLogo}
-                                    className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full hover:bg-red-600"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={triggerFileUpload}
-                                className="flex flex-col items-center justify-center w-16 h-16 rounded-md bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-800 shadow-sm transition-all"
-                                title="Upload Logo"
-                            >
-                                <MdOutlineFileUpload className="text-3xl" />
-                                <span className="text-xs mt-1">Upload</span>
-                            </button>
-                        )}
-
-                      
-                        <input
-                            type="file"
-                            accept="image/*"
-                            ref={fileInputRef}
-                            className="hidden"
-                            onChange={handleLogoUpload}
-                        />
-                    </div>
-                </div> */}
-
-        {/* Style Selection */}
-        <div>
-          <h2 className='text-sm font-medium mb-2'>Select Style</h2>
-          <div className='grid grid-cols-4 gap-2'>
-            {qrCodeStyles.map((style, index) => (
-              <div
-                key={index}
-                className={`border rounded-md cursor-pointer ${
-                  selectedStyleIndex === index
-                    ? 'border-blue-500'
-                    : 'border-gray-300'
-                }`}
-                onClick={() => handleStyleSelection(index)}
-              >
-                {/* QR Code Preview */}
-                <div
-                  className={`flex justify-center items-center h-28`} // Increased height to match QR size
-                  id={`qr-preview-${index}`}
+          {/* Title and Text */}
+          <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+            <div className='space-y-4'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  Title
+                </label>
+                <input
+                  type='text'
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                  placeholder='Enter QR title'
                 />
-                <p className='text-[0.6rem] mt-0.5 p-0.5 px-2 w-full'>
-                  {style?.name}
-                </p>
+                <label className='flex items-center gap-2 text-sm text-gray-600 mt-2'>
+                  <input
+                    type='checkbox'
+                    checked={showTitle}
+                    onChange={() => setShowTitle(!showTitle)}
+                    className='w-4 h-4 rounded border-gray-300 text-blue-500'
+                  />
+                  Show title in QR code
+                </label>
               </div>
-            ))}
+
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  Additional Text
+                </label>
+                <textarea
+                  value={textContent}
+                  onChange={e => setTextContent(e.target.value)}
+                  className='w-full border border-gray-200 rounded-lg p-3 text-sm min-h-[80px]'
+                  placeholder='Add description or notes'
+                />
+                <label className='flex items-center gap-2 text-sm text-gray-600 mt-2'>
+                  <input
+                    type='checkbox'
+                    checked={showText}
+                    onChange={() => setShowText(!showText)}
+                    className='w-4 h-4 rounded border-gray-300 text-blue-500'
+                  />
+                  Show text in QR code
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Advanced QR Options */}
+          <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+            <h3 className='text-sm font-semibold text-gray-700 mb-4'>
+              Advanced Options
+            </h3>
+            <div className='space-y-4'>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <label className='block text-sm text-gray-600 mb-2'>
+                    Corner Shape
+                  </label>
+                  <select
+                    value={cornerType}
+                    onChange={e =>
+                      setCornerType(e.target.value as CornerSquareType)
+                    }
+                    className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                  >
+                    <option value='square'>Square</option>
+                    <option value='extra-rounded'>Extra Rounded</option>
+                    <option value='dot'>Dot</option>
+                  </select>
+                </div>
+                <div>
+                  <label className='block text-sm text-gray-600 mb-2'>
+                    Dot Style
+                  </label>
+                  <select
+                    value={dotType}
+                    onChange={e => setDotType(e.target.value as DotType)}
+                    className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                  >
+                    <option value='square'>Square</option>
+                    <option value='dots'>Dots</option>
+                    <option value='rounded'>Rounded</option>
+                    <option value='classy'>Classy</option>
+                    <option value='classy-rounded'>Classy Rounded</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <label className='block text-sm text-gray-600 mb-2'>
+                    Corner Dot Style
+                  </label>
+                  <select
+                    value={cornerDotType}
+                    onChange={e => setCornerDotType(e.target.value as DotType)}
+                    className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                  >
+                    <option value='square'>Square</option>
+                    <option value='dots'>Dots</option>
+                  </select>
+                </div>
+                <div>
+                  <label className='block text-sm text-gray-600 mb-2'>
+                    Size
+                  </label>
+                  <select
+                    value={width}
+                    onChange={e => setWidth(Number(e.target.value))}
+                    className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                  >
+                    <option value='200'>Small (200px)</option>
+                    <option value='300'>Medium (300px)</option>
+                    <option value='400'>Large (400px)</option>
+                    <option value='500'>Extra Large (500px)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className='block text-sm text-gray-600 mb-2'>
+                  Margin: {margin}px
+                </label>
+                <input
+                  type='range'
+                  min='0'
+                  max='50'
+                  value={margin}
+                  onChange={e => setMargin(Number(e.target.value))}
+                  className='w-full'
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Colors */}
+          <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+            <h3 className='text-sm font-semibold text-gray-700 mb-4'>Colors</h3>
+            <div className='grid grid-cols-2 gap-4'>
+              <div>
+                <label className='block text-sm text-gray-600 mb-2'>
+                  Background
+                </label>
+                <input
+                  type='color'
+                  value={bgColor}
+                  onChange={e => setBgColor(e.target.value)}
+                  className='w-full h-10 rounded cursor-pointer'
+                />
+              </div>
+              <div>
+                <label className='block text-sm text-gray-600 mb-2'>
+                  QR Code
+                </label>
+                <input
+                  type='color'
+                  value={qrColor}
+                  onChange={e => setQrColor(e.target.value)}
+                  className='w-full h-10 rounded cursor-pointer'
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Style Gallery */}
+          <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+            <h3 className='text-sm font-semibold text-gray-700 mb-4'>
+              Style Gallery
+            </h3>
+            <div className='grid grid-cols-4 gap-2'>
+              {qrCodeStyles.slice(0, visibleQrs).map((style, index) => (
+                <div
+                  key={index}
+                  className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer ${
+                    selectedStyleIndex === index
+                      ? 'ring-2 ring-blue-500 shadow-sm'
+                      : 'hover:shadow-sm border border-gray-200'
+                  }`}
+                  onClick={() => handleStyleSelection(index)}
+                >
+                  <div
+                    id={`qr-preview-${index}`}
+                    className='w-full h-full bg-white flex items-center justify-center'
+                  />
+                  {selectedStyleIndex === index && (
+                    <div className='absolute inset-0 bg-blue-500/10 flex items-center justify-center'>
+                      <div className='bg-white rounded-full p-1'>
+                        <svg
+                          className='w-3 h-3 text-blue-500'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                          stroke='currentColor'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M5 13l4 4L19 7'
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {visibleQrs < qrCodeStyles.length && (
+              <button
+                onClick={() => setVisibleQrs(prev => prev + 8)}
+                className='mt-4 w-full py-2 text-sm text-blue-500 font-medium'
+              >
+                Show More
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Preview */}
-      <div className='lg:w-2/3 w-full flex flex-col justify-center items-center p-8 bg-gray-100 space-y-4'>
-        <div className='relative w-full flex justify-center items-center'>
-          {showTitle && (
-            <h1 className='absolute -top-8 text-lg font-bold'>{title}</h1>
-          )}
-          <div ref={qrCodeRef} className='mb-4' />
-          {showText && <p className='mt-2 text-sm'>{textContent}</p>}
-        </div>
+      {/* Desktop Layout */}
+      <div className='hidden lg:block max-w-7xl mx-auto'>
+        <div className='grid grid-cols-2 gap-8'>
+          {/* Left side - Controls */}
+          <div className='space-y-6'>
+            <div className='flex items-center gap-3 mb-6'>
+              <div className='h-8 w-2 bg-blue-500 rounded-full'></div>
+              <h1 className='text-2xl font-bold text-gray-800'>
+                QR Code Generator
+              </h1>
+            </div>
 
-        {/* Download Button */}
-        <button
-          onClick={handleDownloadQRCode}
-          disabled={loading}
-          className='flex items-center px-4 py-2 mt-6 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400'
-        >
-          {loading ? (
-            <RiLoader4Fill className='animate-spin mr-2 text-lg' />
-          ) : (
-            <FaDownload className='mr-2 text-lg' />
-          )}{' '}
-          {/* Download icon */}
-          {loading ? 'Downloading ' : 'Download'} QR Code
-        </button>
+            {/* URL Input */}
+            {showUrl && (
+              <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  Target URL
+                </label>
+                <UrlInput
+                  type='text'
+                  value={url}
+                  onChange={e => setUrl(e.target.value)}
+                  className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                  placeholder='Enter your destination URL'
+                />
+              </div>
+            )}
+
+            {/* Controls sections - reuse mobile controls */}
+            <div className='space-y-4'>
+              {/* Title and Text */}
+              <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+                <div className='space-y-4'>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      Title
+                    </label>
+                    <input
+                      type='text'
+                      value={title}
+                      onChange={e => setTitle(e.target.value)}
+                      className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                      placeholder='Enter QR title'
+                    />
+                    <label className='flex items-center gap-2 text-sm text-gray-600 mt-2'>
+                      <input
+                        type='checkbox'
+                        checked={showTitle}
+                        onChange={() => setShowTitle(!showTitle)}
+                        className='w-4 h-4 rounded border-gray-300 text-blue-500'
+                      />
+                      Show title in QR code
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      Additional Text
+                    </label>
+                    <textarea
+                      value={textContent}
+                      onChange={e => setTextContent(e.target.value)}
+                      className='w-full border border-gray-200 rounded-lg p-3 text-sm min-h-[80px]'
+                      placeholder='Add description or notes'
+                    />
+                    <label className='flex items-center gap-2 text-sm text-gray-600 mt-2'>
+                      <input
+                        type='checkbox'
+                        checked={showText}
+                        onChange={() => setShowText(!showText)}
+                        className='w-4 h-4 rounded border-gray-300 text-blue-500'
+                      />
+                      Show text in QR code
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Advanced Options */}
+              <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+                <h3 className='text-sm font-semibold text-gray-700 mb-4'>
+                  Advanced Options
+                </h3>
+                <div className='space-y-4'>
+                  <div className='grid grid-cols-2 gap-4'>
+                    <div>
+                      <label className='block text-sm text-gray-600 mb-2'>
+                        Corner Shape
+                      </label>
+                      <select
+                        value={cornerType}
+                        onChange={e =>
+                          setCornerType(e.target.value as CornerSquareType)
+                        }
+                        className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                      >
+                        <option value='square'>Square</option>
+                        <option value='extra-rounded'>Extra Rounded</option>
+                        <option value='dot'>Dot</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className='block text-sm text-gray-600 mb-2'>
+                        Dot Style
+                      </label>
+                      <select
+                        value={dotType}
+                        onChange={e => setDotType(e.target.value as DotType)}
+                        className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                      >
+                        <option value='square'>Square</option>
+                        <option value='dots'>Dots</option>
+                        <option value='rounded'>Rounded</option>
+                        <option value='classy'>Classy</option>
+                        <option value='classy-rounded'>Classy Rounded</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className='grid grid-cols-2 gap-4'>
+                    <div>
+                      <label className='block text-sm text-gray-600 mb-2'>
+                        Corner Dot Style
+                      </label>
+                      <select
+                        value={cornerDotType}
+                        onChange={e =>
+                          setCornerDotType(e.target.value as DotType)
+                        }
+                        className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                      >
+                        <option value='square'>Square</option>
+                        <option value='dots'>Dots</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className='block text-sm text-gray-600 mb-2'>
+                        Size
+                      </label>
+                      <select
+                        value={width}
+                        onChange={e => setWidth(Number(e.target.value))}
+                        className='w-full border border-gray-200 rounded-lg p-3 text-sm'
+                      >
+                        <option value='200'>Small (200px)</option>
+                        <option value='300'>Medium (300px)</option>
+                        <option value='400'>Large (400px)</option>
+                        <option value='500'>Extra Large (500px)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className='block text-sm text-gray-600 mb-2'>
+                      Margin: {margin}px
+                    </label>
+                    <input
+                      type='range'
+                      min='0'
+                      max='50'
+                      value={margin}
+                      onChange={e => setMargin(Number(e.target.value))}
+                      className='w-full'
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Colors */}
+              <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+                <h3 className='text-sm font-semibold text-gray-700 mb-4'>
+                  Colors
+                </h3>
+                <div className='grid grid-cols-2 gap-4'>
+                  <div>
+                    <label className='block text-sm text-gray-600 mb-2'>
+                      Background
+                    </label>
+                    <input
+                      type='color'
+                      value={bgColor}
+                      onChange={e => setBgColor(e.target.value)}
+                      className='w-full h-10 rounded cursor-pointer'
+                    />
+                  </div>
+                  <div>
+                    <label className='block text-sm text-gray-600 mb-2'>
+                      QR Code
+                    </label>
+                    <input
+                      type='color'
+                      value={qrColor}
+                      onChange={e => setQrColor(e.target.value)}
+                      className='w-full h-10 rounded cursor-pointer'
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Style Gallery */}
+              <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+                <h3 className='text-sm font-semibold text-gray-700 mb-4'>
+                  Style Gallery
+                </h3>
+                <div className='grid grid-cols-4 gap-2'>
+                  {qrCodeStyles.slice(0, visibleQrs).map((style, index) => (
+                    <div
+                      key={index}
+                      className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer ${
+                        selectedStyleIndex === index
+                          ? 'ring-2 ring-blue-500 shadow-sm'
+                          : 'hover:shadow-sm border border-gray-200'
+                      }`}
+                      onClick={() => handleStyleSelection(index)}
+                    >
+                      <div
+                        id={`qr-preview-${index}`}
+                        className='w-full h-full bg-white flex items-center justify-center'
+                      />
+                      {selectedStyleIndex === index && (
+                        <div className='absolute inset-0 bg-blue-500/10 flex items-center justify-center'>
+                          <div className='bg-white rounded-full p-1'>
+                            <svg
+                              className='w-3 h-3 text-blue-500'
+                              fill='none'
+                              viewBox='0 0 24 24'
+                              stroke='currentColor'
+                            >
+                              <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M5 13l4 4L19 7'
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {visibleQrs < qrCodeStyles.length && (
+                  <button
+                    onClick={() => setVisibleQrs(prev => prev + 8)}
+                    className='mt-4 w-full py-2 text-sm text-blue-500 font-medium'
+                  >
+                    Show More
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right side - Preview */}
+          <div className='space-y-6'>
+            <div className='bg-white p-6 rounded-xl shadow-sm border border-gray-100'>
+              <h2 className='text-lg font-semibold text-gray-800 mb-4'>
+                QR Code Preview
+              </h2>
+              <div
+                ref={desktopQrRef}
+                className='flex justify-center items-center'
+                style={{
+                  width: `${width}px`,
+                  height: `${width}px`,
+                  margin: '0 auto'
+                }}
+              />
+              <button
+                onClick={handleDownloadQRCode}
+                disabled={loading}
+                className='mt-6 w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg font-medium transition-all disabled:opacity-50'
+              >
+                {loading ? (
+                  <RiLoader4Fill className='animate-spin text-xl' />
+                ) : (
+                  <>
+                    <FaDownload className='text-lg' />
+                    <span>Download QR Code</span>
+                  </>
+                )}
+              </button>
+            </div>
+            {/* Style Gallery */}
+            <div className='bg-white p-4 rounded-xl shadow-sm border border-gray-100'>
+              <h3 className='text-sm font-semibold text-gray-700 mb-4'>
+                Style Gallery
+              </h3>
+              <div className='grid grid-cols-4 gap-2'>
+                {qrCodeStyles.slice(0, visibleQrs).map((style, index) => (
+                  <div
+                    key={index}
+                    className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer ${
+                      selectedStyleIndex === index
+                        ? 'ring-2 ring-blue-500 shadow-sm'
+                        : 'hover:shadow-sm border border-gray-200'
+                    }`}
+                    onClick={() => handleStyleSelection(index)}
+                  >
+                    <div
+                      id={`qr-preview-${index}`}
+                      className='w-full h-full bg-white flex items-center justify-center'
+                    />
+                    {selectedStyleIndex === index && (
+                      <div className='absolute inset-0 bg-blue-500/10 flex items-center justify-center'>
+                        <div className='bg-white rounded-full p-1'>
+                          <svg
+                            className='w-3 h-3 text-blue-500'
+                            fill='none'
+                            viewBox='0 0 24 24'
+                            stroke='currentColor'
+                          >
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth={2}
+                              d='M5 13l4 4L19 7'
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {visibleQrs < qrCodeStyles.length && (
+                <button
+                  onClick={() => setVisibleQrs(prev => prev + 8)}
+                  className='mt-4 w-full py-2 text-sm text-blue-500 font-medium'
+                >
+                  Show More
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
