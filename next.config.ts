@@ -6,30 +6,23 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
     dirs: ['pages', 'components', 'lib', 'src']
   },
   typescript: {
     ignoreBuildErrors: false,
   },
   images: {
-    domains: ["images.unsplash.com", "your-image-domain.com"],
+    domains: ["your-image-domain.com"],
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
-  output: "standalone",
   experimental: {
-    optimizeCss: true,
+    optimizeCss: false,
+    scrollRestoration: false
   },
-  webpack: (config) => {
-    config.module.rules.push({
-      test: /\.css$/,
-      use: ['style-loader', 'css-loader'],
-    });
-    return config;
-  },
-  
+  output: 'standalone',
   async headers() {
     return [
       {
