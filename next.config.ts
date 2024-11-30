@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  swcMinify: true,
   images: {
     domains: ["your-image-domain.com"],
     formats: ["image/avif", "image/webp"],

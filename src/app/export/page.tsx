@@ -148,7 +148,7 @@ export default function ExportPage () {
             {/* Info Section */}
             <div className='px-6 py-4 bg-blue-50 border-t border-blue-100'>
               <h3 className='text-sm font-medium text-blue-800'>
-                What's included in the export?
+                What&apos;s included in the export?
               </h3>
               <ul className='mt-2 text-sm text-blue-700 list-disc list-inside'>
                 <li>All your QR codes with their settings and designs</li>

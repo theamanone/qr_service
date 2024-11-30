@@ -32,7 +32,7 @@ export default function About() {
               About <span className="text-blue-600">Us</span>
             </h1>
             <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-              We're on a mission to make QR codes accessible, beautiful, and powerful for everyone.
+              We&apos;re on a mission to make QR codes accessible, beautiful, and powerful for everyone.
             </p>
           </div>
         </div>
@@ -57,7 +57,7 @@ export default function About() {
               </div>
               <h3 className="text-lg font-semibold text-gray-900">Our Vision</h3>
               <p className="mt-2 text-gray-600">
-                To be the world's most trusted and innovative QR code platform.
+                To be the world&apos;s most trusted and innovative QR code platform.
               </p>
             </div>
             <div className="text-center">
@@ -108,7 +108,7 @@ export default function About() {
             <p className="mt-4 text-gray-600 leading-relaxed">
               Founded in 2023, we started with a simple idea: make QR codes beautiful and functional.
               What began as a small project has grown into a platform used by thousands of people worldwide.
-              We're proud of how far we've come, but we're even more excited about where we're going.
+              We&apos;re proud of how far we&apos;ve come, but we&apos;re even more excited about where we&apos;re going.
             </p>
           </div>
         </div>
