@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+
 import { getUserQRCodes } from '@/services/qrService';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as XLSX from 'xlsx';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {

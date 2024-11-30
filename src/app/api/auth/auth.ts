@@ -1,32 +1,11 @@
-import NextAuth, { DefaultSession, Session } from 'next-auth';
+import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcryptjs from 'bcryptjs';
-import { NextAuthOptions } from 'next-auth';
 import User from '@/models/user.model';
 import dbConnect from '@/dbConfig/dbConfig';
 import { sendLoginNotification } from '@/utils/mailer';
 
-// Define custom user type
-interface CustomUser {
-  id: string;
-  email: string;
-  name: string;
-  role?: string;
-}
-
-declare module "next-auth" {
-  interface User extends CustomUser {}
-  
-  interface Session extends DefaultSession {
-    user: CustomUser;
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT extends CustomUser {}
-}
-
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -92,7 +71,7 @@ const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    async session({ session, token }): Promise<Session> {
+    async session({ session, token }) {
       return {
         ...session,
         user: {
@@ -115,8 +94,3 @@ const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
-
-// This is the proper way to export auth routes for Next.js App Router
-const handler = NextAuth(authOptions);
-export const GET = handler;
-export const POST = handler;
