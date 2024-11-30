@@ -1,101 +1,109 @@
-import { NextRequest, NextResponse } from "next/server";
-import mongoose from "mongoose";
-import User from "@/models/user.model"; // Adjust the import path if necessary
-import crypto from "crypto";
-import bcrypt from "bcrypt";
-import dbConnect from "@/dbConfig/dbConfig"; // Ensure this path is correct
-import nodemailer from "nodemailer";
-import { sendEmail } from "@/utils/mailer";
+import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
+import User from '@/models/user.model'
+import bcrypt from 'bcrypt'
+import dbConnect from '@/dbConfig/dbConfig'
+import { sendEmail } from '@/utils/mailer'
 
 // Ensure MongoDB connection is established
-dbConnect();
+dbConnect()
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, password, emailOrUsername, type } = await request.json();
-    console.log("passwrod : ", password);
-    console.log("token ", token);
-    console.log("emailOrUsername ", emailOrUsername);
-    console.log("type ", type);
+    const { token, password, email, type } = await request.json()
+    console.log('type:', type)
+    console.log('email:', email)
 
-    if (type === "request") {
+    if (type === 'request') {
       // Handle password reset request
-      if (!emailOrUsername) {
+      if (!email) {
         return NextResponse.json(
-          { message: "Email or username is required." },
+          { success: false, message: 'Email is required.' },
           { status: 400 }
-        );
+        )
       }
 
-      const user = await User.findOne({
-        $or: [{ email: emailOrUsername }, { username: emailOrUsername }],
-      });
+      const user = await User.findOne({ email })
+      console.log("user:", user)
 
       if (!user) {
         return NextResponse.json(
-          { message: "User not found." },
+          { 
+            success: false, 
+            message: 'No account found with this email address.' 
+          },
           { status: 404 }
-        );
+        )
       }
 
-      const sendMailResponse = await sendEmail({
+      const emailSent = await sendEmail({
         email: user.email,
-        emailType: "RESET",
-        userId: user._id,
+        emailType: 'RESET',
+        userId: user._id
       });
-      // console.log("send mail res : ", sendMailResponse);
+
+      if (!emailSent) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: 'Failed to send reset email. Please try again later.' 
+          },
+          { status: 500 }
+        )
+      }
 
       return NextResponse.json(
-        { message: "Reset link sent to your email.", success: true },
+        { 
+          success: true, 
+          message: 'Password reset instructions have been sent to your email.' 
+        },
         { status: 200 }
-      );
-    } else if (type === "reset") {
+      )
+
+    } else if (type === 'reset') {
       // Handle password reset
       if (!token || !password) {
         return NextResponse.json(
-          { message: "Token and password are required." },
+          { success: false, message: 'Token and password are required.' },
           { status: 400 }
-        );
+        )
       }
 
       const user = await User.findOne({
         resetPasswordToken: token,
-        resetPasswordExpires: { $gt: Date.now() },
-      });
+        resetPasswordExpires: { $gt: Date.now() }
+      })
 
       if (!user) {
         return NextResponse.json(
-          { message: "Invalid or expired token." },
+          { success: false, message: 'Invalid or expired reset token.' },
           { status: 400 }
-        );
+        )
       }
 
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      console.log("New hashed password: ", hashedPassword);
+      const salt = await bcrypt.genSalt(10)
+      const hashedPassword = await bcrypt.hash(password, salt)
 
-      user.password = hashedPassword;
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpires = undefined;
-      await user.save();
-
-      console.log("User password after saving: ", user.password);
+      user.password = hashedPassword
+      user.resetPasswordToken = undefined
+      user.resetPasswordExpires = undefined
+      await user.save()
 
       return NextResponse.json(
-        { message: "Password successfully reset.", success: true },
+        { success: true, message: 'Password successfully reset.' },
         { status: 200 }
-      );
+      )
     } else {
       return NextResponse.json(
-        { message: "Invalid request type." },
+        { success: false, message: 'Invalid request type.' },
         { status: 400 }
-      );
+      )
     }
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error('Error processing request:', error)
     return NextResponse.json(
-      { message: "Internal server error." },
+      { success: false, message: 'An error occurred while processing your request.' },
       { status: 500 }
-    );
+    )
   }
 }

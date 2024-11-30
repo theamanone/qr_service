@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
   // If user is authenticated:
   if (restrictedIfAuthenticatedRoutes.includes(pathName)) {
     console.log('Authenticated user trying to access a restricted route.');
-    return NextResponse.redirect(new URL('/dashboard', request.url)); // Redirect to a dashboard or other protected page
+    return NextResponse.redirect(new URL('/', request.url)); // Redirect to a dashboard or other protected page
   }
 
   // Allow access to all other routes for authenticated users
@@ -60,6 +60,7 @@ export const config = {
     '/auth/:path*',  // Match all auth routes
     '/dashboard',    // Match dashboard
     '/profile',      // Match profile
-    '/',             // Match the root route
+    '/new',       // Match the root route
+    '/export'
   ],
 };

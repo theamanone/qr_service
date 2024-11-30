@@ -1,247 +1,311 @@
-import { NextRequest, NextResponse } from 'next/server'
-import connectDB from '@/dbConfig/dbConfig'
-import QRCode from '@/models/qrcode.model'
-import ScanLog from '@/models/qrscanlog.model'
-import User from '@/models/user.model'
-import { getToken } from 'next-auth/jwt'
-import * as XLSX from 'xlsx' // For Excel export
-import { PDFDocument, StandardFonts } from 'pdf-lib'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getUserQRCodes } from '@/services/qrService';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import * as XLSX from 'xlsx';
 
-export async function GET (request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET
-    })
-
-    // User validation
-    if (!token) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      console.error('No user ID found in session:', session);
+      return new NextResponse('Unauthorized - No user ID', { status: 401 });
     }
 
-    // Connect to the database
-    await connectDB()
-
-    // Get the user ID
-    const userId = token.sub
-
-    // Fetch user details
-    const user = await User.findById(userId).select('name email createdAt')
-    if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 })
-    }
-
-    // Fetch QR codes and their scan logs
-    const qrCodes = await QRCode.find({ user: userId })
-    const data = await Promise.all(
-      qrCodes.map(async qrCode => {
-        const scans = await ScanLog.find({ qrCode: qrCode._id }).select(
-          'ip userAgent timestamp'
-        )
-        return {
-          qrId: qrCode._id,
-          title: qrCode.title,
-          targetUrl: qrCode.targetUrl,
-          createdAt: qrCode.createdAt,
-          updatedAt: qrCode.updatedAt,
-          scanCount: qrCode.scanCount,
-          scans: scans.map(scan => ({
-            ip: scan.ip,
-            userAgent: scan.userAgent,
-            timestamp: scan.timestamp
-          })),
-          qrOptions: qrCode.qrOptions // Include qrOptions for JSON
-        }
-      })
-    )
-
-    // Format data for export
-    const formattedData = {
-      userDetails: {
-        name: user.name,
-        email: user.email,
-        registeredOn: user.createdAt
+    const format = request.nextUrl.searchParams.get('format') || 'pdf';
+    console.log('Fetching QR codes for user:', session.user.id);
+    
+    const qrCodes = await getUserQRCodes(session.user.id);
+    console.log(`Retrieved ${qrCodes.length} QR codes`);
+    
+    // Format the data
+    const exportData = {
+      user: {
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.name || session.user.email
       },
-      qrCodes: data
-    }
+      qrCodes
+    };
 
-    // Determine export format (default to Excel)
-    const searchParams = request.nextUrl.searchParams
-    const format = searchParams.get('format') || 'excel'
-    console.log('format', format)
+    if (format === 'pdf') {
+      const pdfDoc = await PDFDocument.create();
+      const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    if (format === 'excel') {
-      // Excel file generation (improved format)
-      const workbook = XLSX.utils.book_new()
+      // Cover page with minimal height
+      const coverPage = pdfDoc.addPage([595, 250]); // Significantly reduced height
+      let yOffset = 200; // Start closer to top
 
-      // Add User Details sheet
-      const userDetailsSheet = XLSX.utils.json_to_sheet([
-        {
-          Name: formattedData.userDetails.name,
-          Email: formattedData.userDetails.email,
-          'Registered On': formattedData.userDetails.registeredOn
-        }
-      ])
-
-      // Set column widths for User Details sheet
-      userDetailsSheet['!cols'] = [
-        { wpx: 200 }, // Name column
-        { wpx: 300 }, // Email column
-        { wpx: 150 } // Registered On column
-      ]
-
-      XLSX.utils.book_append_sheet(workbook, userDetailsSheet, 'User Details')
-
-      // Add QR Codes sheet
-      const qrCodesData = formattedData.qrCodes.map(qr => ({
-        'QR ID': qr.qrId,
-        Title: qr.title,
-        'Target URL': qr.targetUrl,
-        'Created At': qr.createdAt,
-        'Updated At': qr.updatedAt,
-        'Scan Count': qr.scanCount
-      }))
-      const qrCodesSheet = XLSX.utils.json_to_sheet(qrCodesData)
-
-      // Set column widths for QR Codes sheet
-      qrCodesSheet['!cols'] = [
-        { wpx: 120 }, // QR ID column
-        { wpx: 250 }, // Title column
-        { wpx: 300 }, // Target URL column
-        { wpx: 150 }, // Created At column
-        { wpx: 150 }, // Updated At column
-        { wpx: 100 } // Scan Count column
-      ]
-
-      XLSX.utils.book_append_sheet(workbook, qrCodesSheet, 'QR Codes')
-
-      // Add Scans sheet
-      const scansData = formattedData.qrCodes.flatMap(qr =>
-        qr.scans.map(scan => ({
-          'QR ID': qr.qrId,
-          IP: scan.ip,
-          'User Agent': scan.userAgent,
-          Timestamp: scan.timestamp
-        }))
-      )
-      const scansSheet = XLSX.utils.json_to_sheet(scansData)
-
-      // Set column widths for Scans sheet
-      scansSheet['!cols'] = [
-        { wpx: 120 }, // QR ID column
-        { wpx: 150 }, // IP column
-        { wpx: 200 }, // User Agent column
-        { wpx: 180 } // Timestamp column
-      ]
-
-      XLSX.utils.book_append_sheet(workbook, scansSheet, 'Scans')
-
-      // Write the workbook to a buffer
-      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
-
-      // Return the Excel file
-      return new Response(buffer, {
-        headers: {
-          'Content-Type':
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Content-Disposition': `attachment; filename="UserData_${user.name}.xlsx"`
-        }
-      })
-    } else if (format === 'json') {
-      // Return JSON data
-      //   return NextResponse.json(formattedData, { status: 200 });
-      return NextResponse.json(
-        {
-          message: 'you dont have access to download in this format ! ',
-          formattedData
-        },
-        { status: 200 }
-      )
-    } else if (format === 'pdf') {
-      // PDF file generation
-      const pdfDoc = await PDFDocument.create()
-      const page = pdfDoc.addPage([595, 842]) // A4 size in points
-      const { width, height } = page.getSize()
-
-      // Embed the Helvetica font
-      const font = pdfDoc.embedStandardFont(StandardFonts.Helvetica)
-
-      // Draw User Details
-      page.drawText(`User Details:`, { x: 50, y: height - 100, font, size: 18 })
-      page.drawText(`Name: ${formattedData.userDetails.name}`, {
+      // Title
+      coverPage.drawText('QR Code Export Report', {
         x: 50,
-        y: height - 140,
-        font,
-        size: 12
-      })
-      page.drawText(`Email: ${formattedData.userDetails.email}`, {
+        y: yOffset,
+        size: 20, // Slightly smaller title
+        font: helveticaBold,
+        color: rgb(0, 0, 0)
+      });
+
+      yOffset -= 25;
+
+      coverPage.drawText(`Generated on: ${new Date().toLocaleDateString()}`, {
         x: 50,
-        y: height - 160,
-        font,
-        size: 12
-      })
-      page.drawText(
-        `Registered On: ${formattedData.userDetails.registeredOn}`,
-        { x: 50, y: height - 180, font, size: 12 }
-      )
+        y: yOffset,
+        size: 11,
+        font: helvetica,
+        color: rgb(0.4, 0.4, 0.4)
+      });
 
-      let yPosition = height - 220
-      page.drawText('QR Codes:', { x: 50, y: yPosition, font, size: 14 })
-      yPosition -= 20
+      yOffset -= 30;
 
-      // Draw QR Codes and their details
-      formattedData.qrCodes.forEach(qr => {
-        page.drawText(`QR ID: ${qr.qrId}`, {
+      // User info - no separate header, more compact
+      const userInfo = [
+        `Name: ${exportData.user.name}`,
+        `Email: ${exportData.user.email}`
+      ];
+
+      userInfo.forEach((info) => {
+        coverPage.drawText(info, {
           x: 50,
-          y: yPosition,
-          font,
-          size: 12
-        })
-        yPosition -= 20
-        page.drawText(`Title: ${qr.title}`, {
+          y: yOffset,
+          size: 11,
+          font: helvetica,
+          color: rgb(0.2, 0.2, 0.2)
+        });
+        yOffset -= 20;
+      });
+
+      // Summary section with minimal height
+      const summaryPage = pdfDoc.addPage([595, 200]); // Reduced height
+      yOffset = 150; // Start closer to top
+
+      summaryPage.drawText('Summary', {
+        x: 50,
+        y: yOffset,
+        size: 16,
+        font: helveticaBold,
+        color: rgb(0, 0, 0)
+      });
+
+      yOffset -= 25;
+
+      const totalQRs = exportData.qrCodes.length;
+      const totalScans = exportData.qrCodes.reduce((acc, qr) => acc + qr.scanCount, 0);
+
+      const summaryItems = [
+        `Total QR Codes: ${totalQRs}`,
+        `Total Scans: ${totalScans}`,
+        `Most Used Type: ${getMostCommonType(exportData.qrCodes)}`
+      ];
+
+      summaryItems.forEach(item => {
+        summaryPage.drawText(item, {
           x: 50,
-          y: yPosition,
-          font,
-          size: 12
-        })
-        yPosition -= 20
-        page.drawText(`Target URL: ${qr.targetUrl}`, {
-          x: 50,
-          y: yPosition,
-          font,
-          size: 12
-        })
-        yPosition -= 40 // Adding space before the next QR code
-      })
+          y: yOffset,
+          size: 11,
+          font: helvetica,
+          color: rgb(0.2, 0.2, 0.2)
+        });
+        yOffset -= 20;
+      });
 
-      // Add footer with copyright information
-      const footerText = `© ${new Date().getFullYear()} ${
-        process.env.DOMAIN || 'YourDomain.com'
-      } - All rights reserved`
-      const footerYPosition = 40 // Position the footer text near the bottom of the page
+      // QR Code details with optimized layout
+      const itemsPerPage = 5;
+      for (let i = 0; i < exportData.qrCodes.length; i += itemsPerPage) {
+        const pageQRCodes = exportData.qrCodes.slice(i, i + itemsPerPage);
+        const pageHeight = 200 + (pageQRCodes.length * 100);
+        const page = pdfDoc.addPage([595, pageHeight]);
+        yOffset = pageHeight - 50;
 
-      page.drawText(footerText, { x: 50, y: footerYPosition, font, size: 10 })
+        pageQRCodes.forEach(qr => {
+          page.drawText(qr.title, {
+            x: 50,
+            y: yOffset,
+            size: 14,
+            font: helveticaBold,
+            color: rgb(0, 0, 0)
+          });
 
-      // Save the PDF and return as a response
-      const pdfBytes = await pdfDoc.save()
-      return new Response(pdfBytes, {
+          yOffset -= 25;
+
+          const details = [
+            `Type: ${qr.type}`,
+            `URL: ${qr.url}`,
+            `Created: ${new Date(qr.createdAt).toLocaleDateString()}`,
+            `Total Scans: ${qr.scanCount}`
+          ];
+
+          details.forEach(detail => {
+            page.drawText(detail, {
+              x: 50,
+              y: yOffset,
+              size: 11,
+              font: helvetica,
+              color: rgb(0.2, 0.2, 0.2)
+            });
+            yOffset -= 20;
+          });
+
+          yOffset -= 15;
+        });
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      return new NextResponse(pdfBytes, {
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="UserData_${user.name}.pdf"`
+          'Content-Disposition': 'attachment; filename=QRData.pdf'
         }
-      })
-    } else {
-      // Invalid format
-      return NextResponse.json(
-        { message: 'Invalid format specified' },
-        { status: 400 }
-      )
+      });
     }
-  } catch (error) {
-    console.error('Error exporting user data:', error)
-    return NextResponse.json(
-      { message: 'Error processing export request' },
-      { status: 500 }
-    )
+    
+    if (format === 'excel') {
+      const workbook = XLSX.utils.book_new();
+
+      // Add metadata
+      workbook.Props = {
+        Title: "QR Code Export Report",
+        Subject: "QR Code Data Export",
+        Author: exportData.user.name,
+        CreatedDate: new Date()
+      };
+
+      // QR Codes Sheet with styling
+      const qrCodesData = exportData.qrCodes.map(qr => ({
+        'QR Title': qr.title,
+        'Type': qr.type.toUpperCase(),
+        'Target URL': qr.url,
+        'Created Date': new Date(qr.createdAt).toLocaleDateString(),
+        'Last Modified': new Date(qr.updatedAt).toLocaleDateString(),
+        'Total Scans': qr.scanCount,
+        'Status': 'Active'
+      }));
+      
+      const qrSheet = XLSX.utils.json_to_sheet(qrCodesData);
+
+      // Set column widths
+      const qrColWidths = [
+        { wch: 30 }, // QR Title
+        { wch: 15 }, // Type
+        { wch: 40 }, // Target URL
+        { wch: 15 }, // Created Date
+        { wch: 15 }, // Last Modified
+        { wch: 12 }, // Total Scans
+        { wch: 10 }  // Status
+      ];
+      qrSheet['!cols'] = qrColWidths;
+
+      // Add header style
+      const qrRange = XLSX.utils.decode_range(qrSheet['!ref'] || 'A1');
+      for (let C = qrRange.s.c; C <= qrRange.e.c; ++C) {
+        const address = XLSX.utils.encode_col(C) + "1";
+        if (!qrSheet[address]) continue;
+        qrSheet[address].s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "4F81BD" } },
+          alignment: { horizontal: "center" }
+        };
+      }
+
+      XLSX.utils.book_append_sheet(workbook, qrSheet, 'QR Codes');
+
+      // Analytics Sheet with enhanced metrics
+      const totalQRs = exportData.qrCodes.length;
+      const totalScans = exportData.qrCodes.reduce((acc, qr) => acc + qr.scanCount, 0);
+      const avgScansPerQR = totalQRs > 0 ? Math.round(totalScans / totalQRs) : 0;
+      const mostUsedType = getMostCommonType(exportData.qrCodes);
+      const mostScannedQR = exportData.qrCodes.reduce((prev, current) => 
+        (prev.scanCount > current.scanCount) ? prev : current
+      );
+
+      const analytics = [
+        { 'Metric': 'Total QR Codes', 'Value': totalQRs },
+        { 'Metric': 'Total Scans', 'Value': totalScans },
+        { 'Metric': 'Average Scans per QR', 'Value': avgScansPerQR },
+        { 'Metric': 'Most Used Type', 'Value': mostUsedType },
+        { 'Metric': 'Most Scanned QR', 'Value': mostScannedQR.title },
+        { 'Metric': 'Most Scanned QR (Scans)', 'Value': mostScannedQR.scanCount },
+        { 'Metric': 'Export Date', 'Value': new Date().toLocaleDateString() },
+        { 'Metric': 'User', 'Value': exportData.user.name }
+      ];
+
+      const analyticsSheet = XLSX.utils.json_to_sheet(analytics);
+
+      // Set analytics column widths
+      analyticsSheet['!cols'] = [
+        { wch: 25 }, // Metric
+        { wch: 30 }  // Value
+      ];
+
+      // Style analytics headers
+      const analyticsRange = XLSX.utils.decode_range(analyticsSheet['!ref'] || 'A1');
+      for (let C = analyticsRange.s.c; C <= analyticsRange.e.c; ++C) {
+        const address = XLSX.utils.encode_col(C) + "1";
+        if (!analyticsSheet[address]) continue;
+        analyticsSheet[address].s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "4F81BD" } },
+          alignment: { horizontal: "center" }
+        };
+      }
+
+      XLSX.utils.book_append_sheet(workbook, analyticsSheet, 'Analytics');
+
+      // Usage Trends Sheet
+      const trends = exportData.qrCodes.map(qr => ({
+        'QR Code': qr.title,
+        'Type': qr.type.toUpperCase(),
+        'Days Active': Math.ceil((new Date().getTime() - new Date(qr.createdAt).getTime()) / (1000 * 3600 * 24)),
+        'Total Scans': qr.scanCount,
+        'Avg. Scans per Day': (qr.scanCount / Math.max(1, Math.ceil((new Date().getTime() - new Date(qr.createdAt).getTime()) / (1000 * 3600 * 24)))).toFixed(2)
+      })).sort((a, b) => b['Total Scans'] - a['Total Scans']);
+
+      const trendsSheet = XLSX.utils.json_to_sheet(trends);
+
+      // Set trends column widths
+      trendsSheet['!cols'] = [
+        { wch: 30 }, // QR Code
+        { wch: 15 }, // Type
+        { wch: 12 }, // Days Active
+        { wch: 12 }, // Total Scans
+        { wch: 15 }  // Avg. Scans per Day
+      ];
+
+      // Style trends headers
+      const trendsRange = XLSX.utils.decode_range(trendsSheet['!ref'] || 'A1');
+      for (let C = trendsRange.s.c; C <= trendsRange.e.c; ++C) {
+        const address = XLSX.utils.encode_col(C) + "1";
+        if (!trendsSheet[address]) continue;
+        trendsSheet[address].s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "4F81BD" } },
+          alignment: { horizontal: "center" }
+        };
+      }
+
+      XLSX.utils.book_append_sheet(workbook, trendsSheet, 'Usage Trends');
+
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      return new NextResponse(excelBuffer, {
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': 'attachment; filename=QRData.xlsx'
+        }
+      });
+    }
+
+    return new NextResponse('Invalid format specified', { status: 400 });
+  } catch (error: any) {
+    console.error('Export error:', error);
+    return new NextResponse(error.message || 'Export failed', { status: 500 });
   }
+}
+
+function getMostCommonType(qrCodes: any[]): string {
+  const types = qrCodes.map(qr => qr.type);
+  return types.sort((a, b) =>
+    types.filter(v => v === a).length - types.filter(v => v === b).length
+  ).pop() || 'N/A';
 }

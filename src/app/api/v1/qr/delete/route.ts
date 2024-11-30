@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/dbConfig/dbConfig';
+import dbConnect from '@/dbConfig/dbConfig';
 import QRCode from '@/models/qrcode.model';
 import { getToken } from 'next-auth/jwt';
 import UserHistory from '@/models/userhistory.model';
@@ -24,7 +24,7 @@ export async function DELETE(request: NextRequest) {
         }
 
         // Connect to the database
-        await connectDB();
+        await dbConnect();
 
         // Find the QR code by its ID
         const qrCode = await QRCode.findById(qrCodeId);

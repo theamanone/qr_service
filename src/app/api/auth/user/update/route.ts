@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import connectDB from '@/dbConfig/dbConfig';
+import dbConnect from '@/dbConfig/dbConfig';
 import User from '@/models/user.model';
 
 export async function PATCH(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest) {
     const { name, email } = await request.json();
 
     // Connect to the database
-    await connectDB();
+    await dbConnect();
 
     // Find the user by the token's user ID
     const user = await User.findById(token.sub);
