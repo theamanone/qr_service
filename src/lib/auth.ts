@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize (credentials) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Please provide both email and password.')
         }
@@ -45,7 +45,9 @@ export const authOptions: NextAuthOptions = {
         return {
           id: user._id.toString(),
           email: user.email,
-          name: user.name
+          name: user.name || '',
+          image: user.image || '',
+          role: user.role || 'user'
         }
       }
     })
@@ -55,21 +57,28 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error'
   },
   callbacks: {
-    async jwt ({ token, user }: any) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id
         token.email = user.email
-        token.name = user.name
+        token.name = user.name || ''
+        token.image = user.image || ''
+        token.role = user.role || 'user'
       }
       return token
     },
-    async session ({ session, token }: any) {
-      if (session.user) {
-        session.user.id = token.id as string
-        session.user.email = token.email as string
-        session.user.name = token.name as string
+    async session({ session, token }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+          email: token.email,
+          name: token.name || '',
+          image: token.image || '',
+          role: token.role || 'user'
+        }
       }
-      return session
     }
   },
   session: {

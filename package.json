@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@chakra-ui/react": "^3.2.0",
+    "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
     "@heroicons/react": "^2.2.0",
@@ -78,9 +78,11 @@
     "@types/react-color": "^3.0.12",
     "@types/react-dom": "^18",
     "@types/validator": "^13.12.2",
+    "css-loader": "^7.1.2",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",
+    "style-loader": "^4.0.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

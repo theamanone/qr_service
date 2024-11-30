@@ -11,9 +11,10 @@ import { FaFileExcel, FaFilePdf } from 'react-icons/fa'
 
 import Link from 'next/link'
 import { LuFileJson2, LuLogOut } from 'react-icons/lu'
+import Image from 'next/image'
 
 const Profile: React.FC = () => {
-  const { data: session, update } = useSession()
+  const { data: session, update }:any = useSession()
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [isDeleteFinalConfirmOpen, setDeleteFinalConfirmOpen] = useState(false)
@@ -119,15 +120,17 @@ const Profile: React.FC = () => {
           <div className='flex items-center space-x-4'>
             <div className='w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center text-gray-500'>
               {session?.user?.image ? (
-                <img
-                  src={session.user.image}
+                <Image
+                  src={session?.user?.image || ""}
                   alt='User Avatar'
                   className='w-full h-full object-cover rounded-full'
+                  width={200}
+                  height={200}
                 />
               ) : (
                 <span className='text-2xl font-bold'>
                   {session?.user?.name
-                    ? session.user.name.charAt(0).toUpperCase()
+                    ? session?.user?.name.charAt(0).toUpperCase()
                     : session?.user?.email?.charAt(0).toUpperCase() || 'U'}
                 </span>
               )}
