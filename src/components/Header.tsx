@@ -27,7 +27,9 @@ const Header: React.FC = () => {
 
   useOutsideClick(divRef, () => setMenuOpen(false))
 
-  const handleLogout = () => signOut({ callbackUrl: '/auth/signin' })
+  const handleLogout = () => signOut({ 
+    callbackUrl: `${process.env.NEXTAUTH_URL}/auth/signin` 
+  })
   const toggleMenu = () => setMenuOpen(!menuOpen)
   const handleConfirmOpen = () => setConfirmOpen(true)
   const handleConfirmClose = () => setConfirmOpen(false)

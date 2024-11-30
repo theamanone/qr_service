@@ -26,7 +26,7 @@ const Profile: React.FC = () => {
   const [isConfirmOpen, setConfirmOpen] = useState(false)
   const handleConfirmOpen = () => setConfirmOpen(true)
   const handleConfirmClose = () => setConfirmOpen(false)
-  const handleLogout = () => signOut({ callbackUrl: '/auth/signin' })
+  const handleLogout = () => signOut({ callbackUrl: `${process.env.NEXTAUTH_URL}/auth/signin` })
 
   useEffect(() => {
     setUserName(session?.user?.name || '')

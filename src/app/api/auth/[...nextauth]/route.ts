@@ -106,8 +106,8 @@ const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
+    signIn: `${process.env.NEXTAUTH_URL}/auth/signin`,
+    error: `${process.env.NEXTAUTH_URL}/auth/error`,
   },
   session: {
     strategy: 'jwt',
