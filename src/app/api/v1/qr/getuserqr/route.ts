@@ -43,21 +43,22 @@ export async function GET(request: NextRequest) {
     const qrCodesWithScans = await Promise.all(
       qrCodes.map(async (qrCode) => {
         let qrOptions = qrCode.qrOptions;
-        if (qrOptions?.data?.includes('shortId=find')) {
-          qrOptions.data = qrOptions.data.replace('shortId=find', `shortId=${qrCode.shortId}`);
-        }
+
+        // Generate the correct QR code URL
+        const baseUrl = process.env.NEXTAUTH_URL || process.env.DOMAIN || '';
+        const qrRedirectUrl = `${baseUrl}/api/v1/qr?shortId=${qrCode.shortId}&targetUrl=${qrCode.targetUrl}`;
 
         if (qrOptions?.data) {
-          const domain = process.env.DOMAIN?.replace(/\/$/, ""); // Remove trailing slash if any
-          qrOptions.data = qrOptions.data.replace(new RegExp(`^(${domain})?`), domain);
+          // Update the QR data to use the correct URL format
+          qrOptions.data = qrRedirectUrl;
         }
 
-        const qrImageUrl =
-          qrOptions?.data ||
-          `${process.env.DOMAIN}/api/v1/qr?shortId=${qrCode.shortId}&targetUrl=${qrCode.targetUrl}`;
+        const qrImageUrl = qrRedirectUrl;
 
         // Fetch scan logs for the current QR code
-        const scans = await ScanLog.find({ qrCode: qrCode._id }).select('ip userAgent referer timestamp').lean();
+        const scans = await ScanLog.find({ qrCode: qrCode._id })
+          .select('ip userAgent referer timestamp')
+          .lean();
 
         return {
           _id: qrCode._id,
@@ -65,12 +66,15 @@ export async function GET(request: NextRequest) {
           showTitle: qrCode.showTitle,
           targetUrl: qrCode.targetUrl,
           scanCount: qrCode.scanCount,
-          qrOptions: qrOptions,
+          qrOptions: {
+            ...qrOptions,
+            data: qrRedirectUrl
+          },
           shortId: qrCode.shortId,
           createdAt: qrCode.createdAt,
           updatedAt: qrCode.updatedAt,
           qrImageUrl,
-          scans, // Attach scan logs here
+          scans,
         };
       })
     );

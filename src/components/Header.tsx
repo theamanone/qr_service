@@ -48,7 +48,7 @@ const Header: React.FC = () => {
   )
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 w-full z-50">
+    <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo and Menu Toggle */}
@@ -104,15 +104,23 @@ const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Overlay when menu is open */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+      
+      {/* Mobile Menu */}
       <motion.div
         ref={divRef}
         initial={{ x: '-100%' }}
         animate={{ x: menuOpen ? '0%' : '-100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg lg:hidden"
+        className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg lg:hidden z-50"
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full ">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
               <span className="text-xl font-bold text-gray-800">Menu</span>

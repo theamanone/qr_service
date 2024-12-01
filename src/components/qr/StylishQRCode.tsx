@@ -46,11 +46,11 @@ export default function StylishQRCode() {
   }, [qrCodeStyles, state.bgColor])
 
   return (
-    <div className='min-h-screen bg-gray-50 p-4'>
+    <div className='min-h-screen bg-gray-50 '>
       {/* Mobile Layout */}
       <div className='relative pb-2 lg:hidden'>
         {/* Fixed QR Preview at Top */}
-        <div className='sticky top-20 left-0 right-0 bg-white shadow-lg z-50 p-1'>
+        <div className='sticky top-10 w-full left-0 right-0 bg-white/20 backdrop-blur-md shadow-lg  p-1'>
           <div className='flex flex-col items-center'>
             <QRPreview
               qrRef={qrRef}

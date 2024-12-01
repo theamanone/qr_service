@@ -1,18 +1,19 @@
-import { FC } from 'react';
-import { IoMdShare, IoMdTrash } from 'react-icons/io';
+import { FC, useRef } from 'react';
+import { IoMdShare, IoMdTrash, IoMdDownload } from 'react-icons/io';
 import { motion } from 'framer-motion';
+import QRCode from 'qrcode';
 
 interface QRCodeCardProps {
   qrCode: any;
   index: number;
-  qrPreview:any;
+  qrPreview: any;
   handleViewLargeQR: (qrCode: any, index: number) => void;
   handleOpenScanModal: (scans: any) => void;
   handleShare: (qrCode: any) => void;
   setSelectedQRCode: (qrCode: any) => void;
   selectedQRCode: any;
   closeOptions: any;
-  setQrIdForDelete?:any;
+  setQrIdForDelete?: any;
   setShowConfirm: (show: boolean) => void;
 }
 
@@ -29,6 +30,59 @@ const QRCodeCard: FC<QRCodeCardProps> = ({
   setShowConfirm,
   setQrIdForDelete
 }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const handleDownload = async () => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      // Create a temporary canvas with white background
+      const tempCanvas = document.createElement('canvas');
+      const size = 500; // Larger size for better quality
+      tempCanvas.width = size;
+      tempCanvas.height = size;
+
+      // Generate QR code directly on the canvas
+      console.log("qr code is here , ", qrCode?.qrOptions?.data)
+      await QRCode.toCanvas(tempCanvas, qrCode?.qrOptions?.data || '', {
+        width: size,
+        margin: 2,
+        color: {
+          dark: qrCode?.qrOptions?.dotsOptions?.color || '#000000',
+          light: '#ffffff'
+        },
+        // Add any other QR code options from qrCode.qrOptions here
+      });
+
+      // Convert to blob
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        tempCanvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create blob'));
+          }
+        }, 'image/png', 1.0);
+      });
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${qrCode.title || 'qr-code'}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('An error occurred while downloading the QR code');
+      }
+    }
+  };
+
   return (
     <div
       key={qrCode._id}
@@ -39,13 +93,12 @@ const QRCodeCard: FC<QRCodeCardProps> = ({
         ref={qrPreview}
         className='flex-shrink-0 flex items-center justify-center bg-gray-100 rounded-md'
         style={{
-            width:  '100px',
-            height: '100px'
-          }}
+          width: '100px',
+          height: '100px'
+        }}
         onClick={() => handleViewLargeQR(qrCode, index)}
       >
-        {/* You can keep a fallback text if needed */}
-        <span className='text-sm text-gray-500'>QR Code</span>
+        <canvas ref={canvasRef} />
       </div>
 
       {/* Details on the Right */}
@@ -106,8 +159,15 @@ const QRCodeCard: FC<QRCodeCardProps> = ({
               <span>Share</span>
             </button>
             <button
+              onClick={handleDownload}
+              className='w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center space-x-2'
+            >
+              <IoMdDownload className='text-lg' />
+              <span>Download</span>
+            </button>
+            <button
               onClick={() => {
-                setShowConfirm(true); // Open the confirmation modal
+                setShowConfirm(true);
                 setQrIdForDelete(selectedQRCode?._id)
               }}
               className='w-full px-4 py-2 text-left text-red-500 hover:bg-red-100 flex items-center space-x-2'

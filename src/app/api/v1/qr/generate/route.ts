@@ -10,14 +10,14 @@ export async function POST(request: NextRequest) {
   try {
     // Extract the JWT token from the request headers
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-    console.log("token ", token)
+    // console.log("token ", token)
 
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const { id: userId } = token; // Get the user ID from the token
-    console.log("user id : ", userId)
+    // console.log("user id : ", userId)
 
     // Parse the request body to get QR code details
     const formData = await request.formData();

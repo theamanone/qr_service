@@ -104,7 +104,7 @@ export default function SignInPage() {
         toast.error(res.error)
       } else {
         toast.success('Logged in successfully!')
-        router.push('/')
+         window.location.href = '/'
       }
     } catch (error: any) {
       console.error('Login error:', error)

@@ -90,7 +90,7 @@ export const getUserHistory = async (page: number, limit: number) => {
  export const deleteHistory = async (id:string) =>{
   try {
     const response = await axiosInstance.delete(
-      `${API_BASE_URL}/auth/user/data/history?id=${id}`
+      `${API_BASE_URL}/auth/user/data/history/delete?id=${id}`
     )
     return response?.data
   } catch (error:any) {

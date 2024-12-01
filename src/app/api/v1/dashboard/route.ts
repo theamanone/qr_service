@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-    console.log("token : ", token)
 
     const { id: userId } = token;
 
