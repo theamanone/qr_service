@@ -23,22 +23,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // Get all QR codes for the user
-    const qrCodes = await QRCode.find({ user: userId });
+    // Get QR codes for the user
+    const qrCodes = await QRCode.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .lean();
+
     const qrCodeIds = qrCodes.map(qr => qr._id);
 
-    // Get analytics data for the last 7 days
-    const today = startOfDay(new Date());
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = subDays(today, i);
-      return {
-        date,
-        formattedDate: format(date, 'MMM dd'),
-        timestamp: date.getTime(),
-      };
-    }).reverse();
+    // Get the last 7 days
+    const last7Days = Array.from({ length: 7 }, (_, i) => ({
+      date: startOfDay(subDays(new Date(), i)),
+      count: 0
+    })).reverse();
 
-    // Fetch scan logs for the last 7 days
+    // Get scan logs for the last 7 days
     const scanLogs = await ScanLog.find({
       qrCode: { $in: qrCodeIds },
       timestamp: {
@@ -47,23 +45,83 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Calculate daily scan counts
-    const dailyScans = last7Days.map(day => {
-      const scansOnDay = scanLogs.filter(log => 
-        startOfDay(new Date(log.timestamp)).getTime() === day.date.getTime()
+    // Count scans per day
+    scanLogs.forEach(scan => {
+      const scanDate = startOfDay(new Date(scan.timestamp));
+      const dayIndex = last7Days.findIndex(day =>
+        day.date.getTime() === scanDate.getTime()
       );
-      return scansOnDay.length;
+      if (dayIndex !== -1) {
+        last7Days[dayIndex].count++;
+      }
     });
 
-    // Calculate total scans and active QR codes
-    const totalScans = scanLogs.length;
-    const activeQrCodes = qrCodes.filter(qr => qr.isActive).length;
+    // Get the first page of scan logs for each QR code
+    const LIMIT = 10;
+    const recentScansPromises = qrCodeIds.map(async qrCodeId => {
+      const logs = await ScanLog.find({ qrCode: qrCodeId })
+        .sort({ timestamp: -1 })
+        .limit(LIMIT)
+        .select({
+          _id: 1,
+          ip: 1,
+          userAgent: 1,
+          referer: 1,
+          timestamp: 1,
+          cityName: 1,
+          countryName: 1,
+          regionName: 1,
+          latitude: 1,
+          longitude: 1
+        })
+        .lean();
 
-    // Format graph data
-    const graphData = {
-      labels: last7Days.map(day => day.formattedDate),
-      scans: dailyScans,
-    };
+      const totalCount = await ScanLog.countDocuments({ qrCode: qrCodeId });
+
+      return {
+        qrCodeId: qrCodeId?.toString(),
+        scanLogs: logs.map(log => ({
+          _id: log?._id?.toString(),
+          ip: log.ip,
+          userAgent: log.userAgent,
+          referer: log.referer,
+          timestamp: log.timestamp,
+          location: {
+            city: log.cityName,
+            country: log.countryName,
+            region: log.regionName,
+            coordinates: {
+              lat: log.latitude,
+              lng: log.longitude
+            }
+          }
+        })),
+        pagination: {
+          total: totalCount,
+          page: 1,
+          limit: LIMIT,
+          hasMore: totalCount > LIMIT
+        }
+      };
+    });
+
+    const recentScans = await Promise.all(recentScansPromises);
+
+    // Transform QR codes and add their scan counts
+    const transformedQRCodes = qrCodes.map((qr:any) => {
+      const scans = recentScans.find(scan => scan.qrCodeId === qr._id.toString());
+      return {
+        ...qr,
+        _id: qr._id.toString(),
+        scanLogs: scans?.scanLogs || [],
+        pagination: scans?.pagination || {
+          total: 0,
+          page: 1,
+          limit: LIMIT,
+          hasMore: false
+        }
+      };
+    });
 
     // Combine all dashboard data
     const dashboardData = {
@@ -76,17 +134,24 @@ export async function GET(request: NextRequest) {
       },
       stats: {
         totalQrCodes: qrCodes.length,
-        totalScans,
-        recentScans: dailyScans[dailyScans.length - 1], // Today's scans
-        activeQrCodes,
+        totalScans: scanLogs.length,
+        recentScans: last7Days[last7Days.length - 1].count, // Today's scans
+        activeQrCodes: qrCodes.filter(qr => qr.isActive).length,
       },
-      graphData,
+      graphData: {
+        labels: last7Days.map(day => format(day.date, 'MMM dd')),
+        scans: last7Days.map(day => day.count),
+      },
+      qrCodes: transformedQRCodes,
+      analytics: {
+        last7Days
+      }
     };
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "Dashboard data fetched successfully", 
-      data: dashboardData 
+      message: "Dashboard data fetched successfully",
+      data: dashboardData
     });
 
   } catch (error) {

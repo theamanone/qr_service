@@ -6,6 +6,13 @@ export interface IScanLog extends Document {
   userAgent: string;
   referer: string;
   timestamp: Date;
+  // Location information
+  cityName: string;
+  countryName: string;
+  countryCode: string;
+  regionName: string;
+  latitude: number;
+  longitude: number;
 }
 
 const ScanLogSchema = new Schema<IScanLog>({
@@ -14,6 +21,13 @@ const ScanLogSchema = new Schema<IScanLog>({
   userAgent: { type: String, required: true },
   referer: { type: String, default: null },
   timestamp: { type: Date, default: Date.now },
+  // Location information
+  cityName: { type: String, required: true },
+  countryName: { type: String, required: true },
+  countryCode: { type: String, required: true },
+  regionName: { type: String, required: true },
+  latitude: { type: Number, required: true },
+  longitude: { type: Number, required: true }
 });
 
 const ScanLog = mongoose.models.ScanLog || mongoose.model<IScanLog>("ScanLog", ScanLogSchema);

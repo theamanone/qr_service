@@ -88,9 +88,10 @@ export default function SignInPage() {
 
   const onSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      setLoading(true)
+    setError('') // Clear any previous errors
+    setLoading(true)
 
+    try {
       const res = await signIn('credentials', {
         email: email,
         password: password,
@@ -101,14 +102,22 @@ export default function SignInPage() {
       })
 
       if (res?.error) {
-        toast.error(res.error)
-      } else {
-        toast.success('Logged in successfully!')
-         window.location.href = '/'
+        // Handle specific error cases
+        setError(res.error)
+        toast.error(res.error || 'Sign-in failed')
+        setLoading(false)
+        return
       }
+
+      // Successful sign-in
+      toast.success('Successfully signed in!')
+      window.location.href = '/'
     } catch (error: any) {
-      console.error('Login error:', error)
-      toast.error(error.message || 'Something went wrong')
+      // Handle network or unexpected errors
+      const errorMessage = error.message || 'An unexpected error occurred'
+      setError(errorMessage)
+      toast.error(errorMessage)
+      setLoading(false)
     } finally {
       setLoading(false)
     }
@@ -122,8 +131,9 @@ export default function SignInPage() {
         </h1>
 
         {error && (
-          <div className='p-3 mb-4 text-sm text-red-700 bg-red-100 border border-red-300 rounded'>
-            {error}
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <strong className="font-bold">Error: </strong>
+            <span className="block sm:inline">{error}</span>
           </div>
         )}
         {success && (

@@ -4,7 +4,8 @@ import bcryptjs from 'bcryptjs';
 import { NextAuthOptions } from 'next-auth';
 import User from '@/models/user.model';
 import dbConnect from '@/dbConfig/dbConfig';
-import { sendLoginNotification } from '@/utils/mailer';
+// import { sendLoginNotification } from '@/utils/mailer';
+// import { getClientIP, getIPInfo } from '@/utils/ip.utils';
 
 // Define custom user type
 interface CustomUser {
@@ -37,7 +38,7 @@ const authOptions: NextAuthOptions = {
         os: { label: 'OS', type: 'text', optional: true },
         location: { label: 'Location', type: 'text', optional: true },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         try {
           if (!credentials?.email || !credentials?.password) {
             throw new Error('Please provide both email and password');
@@ -57,18 +58,44 @@ const authOptions: NextAuthOptions = {
             throw new Error('Invalid password');
           }
 
+          // let locationInfo:any = { 
+          //   city: 'Unknown', 
+          //   region: 'Unknown', 
+          //   country: 'Unknown' 
+          // }
+          // try {
+          //   // Get public IP
+          //   const clientIP = getClientIP(request as any)
+          //   // Get IP info
+          //   const ipInfoResponse:any = await getIPInfo(clientIP)
+          //   if (ipInfoResponse?.success && ipInfoResponse?.data) {
+          //     locationInfo = {
+          //       city: ipInfoResponse?.data?.cityName || 'Unknown',
+          //       region: ipInfoResponse?.data?.regionName || 'Unknown',
+          //       country: ipInfoResponse?.data?.countryName || 'Unknown'
+          //     }
+          //   }
+          // } catch (ipError) {
+          //   console.error('Failed to get IP info:', ipError)
+          // }
+
+          // Construct location string
+          // const locationString = `${locationInfo.city}, ${locationInfo.region}, ${locationInfo.country}`
+
           // Send login notification
-          try {
-            await sendLoginNotification({
-              email: user.email,
-              name: user.name,
-              browser: credentials.browser,
-              os: credentials.os,
-              location: credentials.location
-            });
-          } catch (error) {
-            console.error('Failed to send login notification:', error);
-          }
+
+          // Send login notification
+          // try {
+          //   await sendLoginNotification({
+          //     email: user.email,
+          //     name: user.name,
+          //     browser: credentials.browser,
+          //     os: credentials.os,
+          //     location: locationString
+          //   });
+          // } catch (error) {
+          //   console.error('Failed to send login notification:', error);
+          // }
 
           return {
             id: user._id.toString(),
@@ -83,26 +110,27 @@ const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account, profile }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.role = user.role;
       }
+      if (account) {
+        token.accessToken = account.access_token;
+      }
       return token;
     },
     async session({ session, token }): Promise<Session> {
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id,
-          email: token.email as string,
-          name: token.name as string,
-          role: token.role as string
-        }
-      };
+      if (session?.user) {
+        (session.user as any).accessToken = token.accessToken;
+        session.user.id = token.id;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
+        session.user.role = token.role as string;
+      }
+      return session;
     },
   },
   pages: {
@@ -111,6 +139,9 @@ const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  jwt: {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   secret: process.env.NEXTAUTH_SECRET,

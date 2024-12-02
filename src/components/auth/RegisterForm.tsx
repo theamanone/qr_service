@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function RegisterForm() {
-  const [email, setEmail] = useState('admin@gmail.com');
-  const [password, setPassword] = useState('Aman@4081');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);

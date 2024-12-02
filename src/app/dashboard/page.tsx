@@ -18,6 +18,7 @@ import QRCodeCard from '@/components/QRCodeCard'
 import LargeQRCodeModal from '@/components/LargeQRCodeModal'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 const Dashboard: React.FC = () => {
   const { data: session } = useSession()
@@ -67,7 +68,7 @@ const Dashboard: React.FC = () => {
   useOutsideClick(closeOptions, () => setSelectedQRCode(null))
 
   const handleOpenScanModal = (scanData: any) => {
-    setSelectedScan(scanData) // Set selected scan details when IP is clicked
+    setSelectedScan(scanData) 
   }
 
   const handleCloseScanModal = () => {
@@ -172,39 +173,44 @@ const Dashboard: React.FC = () => {
   
 
   const handleDelete = async () => {
-   
     try {
-      // console.log('Before deletion:', qrIdForDelete)
-
       // Call the deleteQr function and pass the QR code ID
       const response = await deleteQr(qrIdForDelete)
-      // console.log('response delete : ', response)
 
       if (response?.success) {
-        // Update state to remove the QR code from the list
-        setDashboardData((prevData: any) => {
-          const updatedQrCodes = prevData.qrCodes.filter(
-            (item: any) => item._id !== qrIdForDelete
-          )
-          return { ...prevData, qrCodes: updatedQrCodes }
-        })
+        // Update QR codes state to remove the deleted QR code
+        setQrCodes((prevQrCodes: any[]) => 
+          prevQrCodes.filter((item: any) => item._id !== qrIdForDelete)
+        )
 
+        // Update local storage to reflect the deletion
+        const storedQrCodes = JSON.parse(localStorage.getItem('userQrCodes') || '[]')
+        const updatedStoredQrCodes = storedQrCodes.filter((item: any) => item._id !== qrIdForDelete)
+        localStorage.setItem('userQrCodes', JSON.stringify(updatedStoredQrCodes))
+
+        // Add to demo history
         setDemoHistory((prevHistory: any[]) => [
-          ...prevHistory, // Retain existing history
+          ...prevHistory,
           {
-            id: response?.historyId || `demo-${Date.now()}`, // Unique ID for the demo history activity
-            description: `Deleted QR Code: ${selectedQr?.title || 'Untitled'}`, // Description of the activity
-            createdAt: new Date().toISOString() // Current time as createdAt
+            id: response?.historyId || `demo-${Date.now()}`,
+            description: `Deleted QR Code: ${selectedQr?.title || 'Untitled'}`,
+            createdAt: new Date().toISOString()
           }
         ])
+
+        // Reset states
         setShowConfirm(false)
-        // Close dropdown or reset selected QR code
         setSelectedQRCode(null)
+
+        // Optional: Show success toast
+        toast.success('QR Code deleted successfully')
       } else {
         console.error('Failed to delete QR code:', response?.message)
+        toast.error('Failed to delete QR Code')
       }
     } catch (error) {
       console.error('Error deleting QR code:', error)
+      toast.error('An error occurred while deleting QR Code')
     }
   }
 
@@ -372,7 +378,7 @@ const Dashboard: React.FC = () => {
           <RecentActivity />
         </div>
 
-        <ScanModal scanData={selectedScan} isOpen={!!selectedScan} closeModal={handleCloseScanModal} closeModalRef={closeModalRef} />
+        <ScanModal qrCodeId={selectedScan?._id} totalScans={selectedScan?.scanCount} isOpen={!!selectedScan} closeModal={handleCloseScanModal} closeModalRef={closeModalRef} />
         <LargeQRCodeModal isVisible={!!largeQRCode} closeModal={closeLargeQR} qrRef={largeQRRef} modalRef={LarageQrRef} />
       </main>
 

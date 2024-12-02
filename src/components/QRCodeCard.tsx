@@ -122,12 +122,12 @@ const QRCodeCard: FC<QRCodeCardProps> = ({
             {qrCode?.targetUrl || ''}
           </a>
         </p>
-        {qrCode?.scans?.length > 0 && (
+        {qrCode?.scanCount > 0 && (
           <button
             className={`text-xs p-0.5 px-1 flex border bg-[${
               qrCode?.qrOptions?.dotsOptions?.color || 'bg-gray-500'
             }] rounded-md text-gray-300 w-20`}
-            onClick={() => handleOpenScanModal(qrCode.scans)}
+            onClick={() => handleOpenScanModal(qrCode)}
           >
             View Scans
           </button>

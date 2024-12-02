@@ -56,9 +56,9 @@ export async function GET(request: NextRequest) {
         const qrImageUrl = qrRedirectUrl;
 
         // Fetch scan logs for the current QR code
-        const scans = await ScanLog.find({ qrCode: qrCode._id })
-          .select('ip userAgent referer timestamp')
-          .lean();
+        // const scans = await ScanLog.find({ qrCode: qrCode._id })
+        //   .select('ip userAgent referer timestamp')
+        //   .lean();
 
         return {
           _id: qrCode._id,
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
           createdAt: qrCode.createdAt,
           updatedAt: qrCode.updatedAt,
           qrImageUrl,
-          scans,
+          // scans,
         };
       })
     );
