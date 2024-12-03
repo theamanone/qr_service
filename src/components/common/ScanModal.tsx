@@ -278,9 +278,10 @@ const ScanModal: React.FC<ScanModalProps> = ({
                             <span className="truncate">{formatLocation(scan.location)}</span>
                             <IoOpenOutline className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </button>
-                          <div className="inline-flex items-center space-x-1 rounded-full bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
-                            {getDeviceIcon(device.type)}
-                            <span className="hidden sm:inline">{device.type}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">•</span>
+                          <div className="inline-flex items-center space-x-1.5 text-xs font-medium text-gray-900 dark:text-white">
+                            <IoGlobeOutline className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+                            <span>{scan.ip}</span>
                           </div>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
