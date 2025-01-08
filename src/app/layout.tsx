@@ -24,21 +24,26 @@ export const metadata: Metadata = {
   description: 'Generate and customize QR codes easily with this tool.'
 }
 
-export default function RootLayout ({
+export default function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link
           rel="icon"
           type="image/png"
           href="/favicon/favicon-16x16.png"
-          sizes="96x96"
+          sizes="16x16"
         />
-        <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+        <link
+          rel="icon"
+          type="image/png"
+          href="/favicon/favicon-32x32.png"
+          sizes="32x32"
+        />
         <link rel="shortcut icon" href="/favicon/favicon.ico" />
         <link
           rel="apple-touch-icon"
@@ -47,7 +52,7 @@ export default function RootLayout ({
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-gray-100 min-h-screen`}>
+      <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-gray-100 min-h-screen`}>
         <RootLayoutClient>
           <AppProvider>
             <LoadingProvider>{children}</LoadingProvider>
