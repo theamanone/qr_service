@@ -2,6 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { FiGithub, FiTwitter, FiLinkedin } from "react-icons/fi";
+import { siteConfig } from '@/config/site.config';
 
 const Footer: React.FC = () => {
   const footerLinks = [
@@ -116,6 +117,11 @@ const Footer: React.FC = () => {
               </Link>
             </div>
           </div>
+        </div>
+        <div className="mt-8 border-t border-gray-200 pt-8">
+          <p className="text-center text-sm text-gray-500">
+            {siteConfig.copyright}
+          </p>
         </div>
       </div>
     </footer>

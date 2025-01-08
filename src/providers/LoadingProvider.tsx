@@ -1,7 +1,12 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import QRLoader from '@/components/QRLoader';
+import dynamic from 'next/dynamic';
+
+// Import QRLoader dynamically with no SSR
+const QRLoader = dynamic(() => import('@/components/QRLoader'), {
+  ssr: false
+});
 
 interface LoadingContextType {
   isLoading: boolean;
@@ -30,7 +35,7 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
   return (
     <LoadingContext.Provider value={{ isLoading, setIsLoading }}>
       {isLoading && <QRLoader />}
-      <div className={isLoading ? 'hidden' : undefined}>
+      <div className={isLoading ? 'hidden' : ''}>
         {children}
       </div>
     </LoadingContext.Provider>

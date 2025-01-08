@@ -10,6 +10,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import useOutsideClick from '@/utils/documentOutSideClick'
+import { siteConfig } from '@/config/site.config'
+import Image from 'next/image'
 
 interface NavItem {
   path: string
@@ -51,60 +53,63 @@ const Header: React.FC = () => {
   )
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          {/* Logo and Menu Toggle */}
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={toggleMenu}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Toggle Menu"
-            >
-              <HiMenu className="w-6 h-6 text-gray-600" />
-            </button>
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 text-transparent bg-clip-text">
-                QR Generator
-              </span>
-            </Link>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-2">
-            {visibleNavItems.map((item) => (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-                  isActive(item.path)
-                    ? 'text-blue-600 bg-blue-50 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.label}</span>
-              </Link>
-            ))}
-            {status === 'authenticated' ? (
-              <button
-                onClick={handleConfirmOpen}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg"
-              >
-                <LuLogOut className="w-5 h-5" />
-                <span>Logout</span>
-              </button>
-            ) : (
-              <Link
-                href="/auth/signin"
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg"
-              >
-                <FiLogIn className="w-5 h-5" />
-                <span>Login</span>
-              </Link>
-            )}
-          </nav>
+    <header className="sticky top-0 left-0 w-full bg-white shadow-sm z-50 pt-4 pb-2">
+      <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+        <Link href="/" className="flex items-center space-x-2">
+          <Image 
+            src={siteConfig.logo} 
+            alt={siteConfig.name} 
+            width={40} 
+            height={40}
+            className="object-contain"
+          />
+          <span className="font-semibold text-lg">{siteConfig.name}</span>
+        </Link>
+        {/* Logo and Menu Toggle */}
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={toggleMenu}
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Toggle Menu"
+          >
+            <HiMenu className="w-6 h-6 text-gray-600" />
+          </button>
         </div>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden lg:flex items-center space-x-2">
+          {visibleNavItems.map((item) => (
+            <Link
+              key={item.path}
+              href={item.path}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
+                isActive(item.path)
+                  ? 'text-blue-600 bg-blue-50 font-medium'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+          {status === 'authenticated' ? (
+            <button
+              onClick={handleConfirmOpen}
+              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg"
+            >
+              <LuLogOut className="w-5 h-5" />
+              <span>Logout</span>
+            </button>
+          ) : (
+            <Link
+              href="/auth/signin"
+              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg"
+            >
+              <FiLogIn className="w-5 h-5" />
+              <span>Login</span>
+            </Link>
+          )}
+        </nav>
       </div>
 
       {/* Overlay when menu is open */}

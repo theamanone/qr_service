@@ -9,8 +9,8 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 
 export default function SignInPage() {
-  const [email, setEmail] = useState('demo@gmail.com')
-  const [password, setPassword] = useState('Demo@123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [showPassword, setShowPassword] = useState(false)

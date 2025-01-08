@@ -23,12 +23,13 @@ export default function StylishQRCode() {
   }
 
   useEffect(() => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     qrCodeStyles.forEach((style, index) => {
       const qrCodeInstance = new QRCodeStyling({
         ...style,
         width: 85,
         height: 85,
-        data: `${window.location.origin}/api/v1/qr?shortId=find&targetUrl=${state.url}`,
+        data: `${origin}/api/v1/qr?shortId=find&targetUrl=${state.url}`,
         backgroundOptions: {
           color: state.bgColor
         },

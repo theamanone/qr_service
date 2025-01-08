@@ -30,30 +30,28 @@ export default function RootLayout ({
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en'>
+    <html lang="en">
       <head>
         <link
-          rel='icon'
-          type='image/png'
-          href='/favicon/favicon-96x96.png'
-          sizes='96x96'
+          rel="icon"
+          type="image/png"
+          href="/favicon/favicon-16x16.png"
+          sizes="96x96"
         />
-        <link rel='icon' type='image/svg+xml' href='/favicon/favicon.svg' />
-        <link rel='shortcut icon' href='/favicon/favicon.ico' />
+        <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+        <link rel="shortcut icon" href="/favicon/favicon.ico" />
         <link
-          rel='apple-touch-icon'
-          sizes='180x180'
-          href='/favicon/apple-touch-icon.png'
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/favicon/apple-touch-icon.png"
         />
-        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-gray-100 h-full flex flex-col`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-gray-100 min-h-screen`}>
         <RootLayoutClient>
-            <AppProvider>
-              <LoadingProvider>{children}</LoadingProvider>
-            </AppProvider>
+          <AppProvider>
+            <LoadingProvider>{children}</LoadingProvider>
+          </AppProvider>
         </RootLayoutClient>
       </body>
     </html>

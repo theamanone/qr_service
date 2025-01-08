@@ -1,15 +1,22 @@
 'use client';
 
+import { siteConfig } from '@/config/site.config';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 const QRLoader = () => {
-  // Create a 5x5 grid for QR-like pattern
   const gridSize = 5;
   const centerPiece = Math.floor(gridSize / 2);
+  const [delays, setDelays] = useState<number[]>([]);
+
+  useEffect(() => {
+    // Generate random delays on the client side only
+    setDelays(Array.from({ length: gridSize * gridSize }, () => Math.random() * 0.5));
+  }, []);
 
   // Function to check if a position is a corner piece
   const isCornerPiece = (row: number, col: number) => {
-    const isCorner = (
+    return (
       // Top-left corner
       (row < 2 && col < 2) ||
       // Top-right corner
@@ -17,7 +24,6 @@ const QRLoader = () => {
       // Bottom-left corner
       (row > gridSize - 3 && col < 2)
     );
-    return isCorner;
   };
 
   // Animation variants for squares
@@ -36,7 +42,7 @@ const QRLoader = () => {
             gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
           }}
         >
-          {Array.from({ length: gridSize * gridSize }).map((_, idx) => {
+          {delays.map((delay, idx) => {
             const row = Math.floor(idx / gridSize);
             const col = idx % gridSize;
             const isCorner = isCornerPiece(row, col);
@@ -52,7 +58,7 @@ const QRLoader = () => {
                   animate="animate"
                   transition={{
                     duration: 0.5,
-                    delay: Math.random() * 0.5,
+                    delay,
                     repeat: Infinity,
                     repeatType: "reverse",
                     repeatDelay: 1
@@ -70,7 +76,7 @@ const QRLoader = () => {
                 animate="animate"
                 transition={{
                   duration: 0.5,
-                  delay: Math.random() * 0.3,
+                  delay: delay * 0.6,
                 }}
                 className="w-4 h-4 sm:w-6 sm:h-6 bg-blue-600 rounded-sm"
               />
@@ -86,7 +92,7 @@ const QRLoader = () => {
           className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center"
         >
           <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-            QR Generator
+            {siteConfig.name}
           </h2>
           <p className="text-sm text-gray-500 mt-2">Loading...</p>
         </motion.div>
