@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: 'md-india',
+  name: 'QR Generator',
   url: 'http://md-india.com',
   logo: '/assets/logo.jpg',
   backgroundImage: '/assets/background.jpg',

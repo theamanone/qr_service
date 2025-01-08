@@ -40,7 +40,7 @@ const Footer: React.FC = () => {
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-block">
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 text-transparent bg-clip-text">
-                QR Generator
+              {siteConfig.name}
               </span>
             </Link>
             <p className="mt-4 text-sm text-gray-500 leading-relaxed">

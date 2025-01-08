@@ -100,26 +100,7 @@ const Home: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Preview Section */}
-        <div className="py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-extrabold text-white">
-                Preview Your QR Code
-              </h2>
-              <p className="mt-4 text-xl text-gray-800">
-                See how your QR code will look before generating
-              </p>
-            </div>
-            <div className="mt-12 flex justify-center">
-              <ClientOnly>
-                <QRCodePreview />
-              </ClientOnly>
-            </div>
-          </div>
-        </div>
+        </div>        
       </div>
     </div>
   );

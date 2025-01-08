@@ -54,24 +54,22 @@ const Header: React.FC = () => {
   )
 
   return (
-    <header className="bg-white shadow-sm">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center">
-              <Image
-                src={siteConfig.logo}
-                alt={siteConfig.name}
-                width={40}
-                height={40}
-                className="rounded-full"
-                priority
-              />
-              <span className="ml-2 text-xl font-bold text-gray-900">
-                {siteConfig.name}
-              </span>
-            </Link>
-          </div>
+    <header className="sticky top-0 z-50 w-full border-b bg-white/75 backdrop-blur-lg">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="flex h-28 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-3">
+            <Image
+              src={siteConfig.logo}
+              alt={siteConfig.name}
+               width={120}
+              height={150}
+              quality={100}
+              className="rounded-full"
+              priority
+            />
+            <span className="font-bold text-gray-500 text-2xl">{siteConfig.name}</span>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden sm:flex sm:items-center sm:space-x-4">
@@ -118,7 +116,7 @@ const Header: React.FC = () => {
             </button>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Mobile Navigation */}
       {menuOpen && (
