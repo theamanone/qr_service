@@ -33,11 +33,7 @@ const Home: React.FC = () => {
     <div className="min-h-screen relative">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-black"
-        style={{ 
-          backgroundImage: `url(${siteConfig.backgroundImage})`,
-          opacity: 0.8
-        }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-white"
       />
 
       {/* Content */}
@@ -47,10 +43,10 @@ const Home: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
-                <span className="block">Transform Your</span>
+                <span className="block text-gray-900">Transform Your</span>
                 <span className="block text-blue-400">Ideas into QR Codes</span>
               </h1>
-              <p className="mt-3 text-base text-gray-200 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl">
+              <p className="mt-3 text-base text-gray-800 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl">
                 Create professional QR codes in seconds. Perfect for businesses, marketing campaigns, or personal use.
               </p>
               <div className="mt-5 sm:mt-8 sm:flex sm:justify-center">
@@ -82,7 +78,7 @@ const Home: React.FC = () => {
               <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
                 Create QR Codes for Everything
               </h2>
-              <p className="mt-4 text-xl text-gray-300">
+              <p className="mt-4 text-xl text-gray-800">
                 Choose from multiple QR code types to suit your needs
               </p>
             </div>
@@ -98,7 +94,7 @@ const Home: React.FC = () => {
                       {item.icon}
                     </div>
                     <h3 className="text-lg font-medium text-white">{item.title}</h3>
-                    <p className="mt-2 text-base text-gray-300">{item.description}</p>
+                    <p className="mt-2 text-base text-gray-800">{item.description}</p>
                   </div>
                 ))}
               </div>
@@ -113,7 +109,7 @@ const Home: React.FC = () => {
               <h2 className="text-3xl font-extrabold text-white">
                 Preview Your QR Code
               </h2>
-              <p className="mt-4 text-xl text-gray-300">
+              <p className="mt-4 text-xl text-gray-800">
                 See how your QR code will look before generating
               </p>
             </div>
